@@ -3,7 +3,7 @@ import "./globals.css";
 
 export const metadata: Metadata = {
   title: "宴会ゲームBOX｜みんなで遊べるゲーム集",
-  description: "フォーダイスちんちろ、どすこい、NGワードなど6種類を一台のスマホで遊べる宴会ゲーム集",
+  description: "ちんちろ、どすこい、ワードウルフ、3ヒントクイズなど18種類を一台のスマホで遊べる宴会ゲーム集",
   other: { "codex-preview": "development" },
 };
 
