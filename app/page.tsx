@@ -106,7 +106,7 @@ function Lobby({ chips, setChips, open }: { chips: number; setChips: (n: number)
         <span className="game-icon">{game.icon}</span><span className="game-copy"><small>{game.en}</small><strong>{game.name}</strong><em>{game.tag}</em></span><span className="arrow">›</span>
       </button>)}
     </section>
-    <footer><span>遊び方は各ゲーム内で確認できます</span><b>v0.3.0</b></footer>
+    <footer><span>遊び方は各ゲーム内で確認できます</span><b>v0.4.0</b></footer>
   </div>;
 }
 

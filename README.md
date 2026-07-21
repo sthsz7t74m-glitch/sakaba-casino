@@ -26,6 +26,14 @@ npm run dev
 npm run build
 ```
 
+## GitHub Pages
+
+```bash
+npm run build:github
+```
+
+生成された `docs` フォルダを、GitHub Pagesの公開元（`main /docs`）に設定します。
+
 ## バージョン
 
-`v0.1.0`
+`v0.4.0`
