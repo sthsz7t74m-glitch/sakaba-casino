@@ -1,0 +1,9 @@
+.setup-panel { grid-template-columns: 105px minmax(220px,1fr) auto minmax(380px,auto) !important; align-items: center; }
+.setup-panel .total-rate { min-width: 0; }
+.setup-panel .rate-equation { flex-wrap: nowrap; white-space: nowrap; }
+.rate-equation .rate-die { min-width: 32px; }
+.game-panel.roll-pulse { animation: roll-panel-pulse .36s ease-out; }
+.game-panel.gold-burst::after { content: "✦  GOLD  ✦"; position: fixed; inset: 50% auto auto 50%; z-index: 20; padding: 14px 24px; border-radius: 999px; color: #704900; background: #ffe274; box-shadow: 0 0 45px #ffc400; transform: translate(-50%,-50%); animation: gold-pop .9s ease-out forwards; pointer-events: none; }
+@keyframes roll-panel-pulse { 50% { transform: scale(.995); filter: brightness(1.05); } }
+@keyframes gold-pop { 0% { opacity: 0; transform: translate(-50%,-50%) scale(.55); } 30% { opacity: 1; transform: translate(-50%,-50%) scale(1.12); } 100% { opacity: 0; transform: translate(-50%,-65%) scale(1); } }
+@media (max-width: 900px) { .setup-panel { grid-template-columns: 1fr 1fr !important; } .setup-panel .total-rate { grid-column: 1/-1; } }

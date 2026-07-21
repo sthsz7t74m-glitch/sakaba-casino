@@ -1,0 +1,28 @@
+/* Classic white dice: black pips, with the single pip in red. */
+.dice-stage .die-card .cube-face {
+  border: 2px solid #d8d3cc;
+  border-radius: 12px;
+  background: linear-gradient(145deg, #fff 0 45%, #eeeae4 100%) !important;
+  box-shadow: inset 5px 5px 9px #fff, inset -6px -7px 10px #b8b2aa66, 0 3px 6px #4d3f3428;
+}
+.die-card .pips i { background: #26222d; box-shadow: inset 2px 2px 2px #ffffff45, inset -2px -2px 3px #0006; }
+.die-card .pips.value-1 i { background: #e73535; box-shadow: inset 2px 2px 2px #ffb0a8, inset -2px -2px 3px #8f1111; }
+.dice-stage .die-card.all-six .cube-face { background: linear-gradient(145deg, #fff7b5, #f2c635 52%, #b77b00) !important; }
+.die-card.all-six .pips i { background: #6a4a00; }
+
+.mini-rate-die {
+  position: relative;
+  display: inline-block;
+  width: 28px;
+  height: 28px;
+  border: 1px solid #cfc9c1;
+  border-radius: 6px;
+  background: linear-gradient(145deg, #fff, #ece8e1);
+  box-shadow: inset 2px 2px 3px #fff, inset -2px -2px 4px #aaa5, 0 2px 3px #50483e22;
+  vertical-align: middle;
+}
+.mini-rate-die .pips i { width: 5px; height: 5px; background: #26222d; }
+.mini-rate-die .pips.value-1 i { background: #e73535; }
+.rate-die { display: grid !important; place-items: center; background: transparent !important; box-shadow: none !important; }
+.rate-die .mini-rate-die { width: 42px; height: 42px; border-radius: 9px; }
+.rate-die .mini-rate-die .pips i { width: 8px; height: 8px; }

@@ -2,8 +2,8 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "酒場カジノ｜宴会ゲーム集",
-  description: "ちんちろ、どすこいなどを一台のスマホで遊べる宴会ゲーム集",
+  title: "宴会ゲームBOX｜みんなで遊べるゲーム集",
+  description: "フォーダイスちんちろ、どすこい、NGワードなど6種類を一台のスマホで遊べる宴会ゲーム集",
   other: { "codex-preview": "development" },
 };
 

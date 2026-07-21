@@ -1,0 +1,2 @@
+.mode-switch { grid-template-columns: repeat(4,1fr); }
+@media (max-width: 600px) { .mode-button { padding: 6px 3px; font-size: .68rem; } .mode-button small { font-size: .52rem; } }

@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#6d392e">
+  <meta name="description" content="4個のサイコロと4つの判定方式で遊ぶ、フォーダイスちんちろ">
+  <title>フォーダイスちんちろ｜LOGIC LAB</title>
+  <link rel="stylesheet" href="styles.css?v=1.0.7"><link rel="stylesheet" href="enhancements.css?v=1.0.7"><link rel="stylesheet" href="pop-theme.css?v=1.0.7"><link rel="stylesheet" href="dice-3d.css?v=1.0.7"><link rel="stylesheet" href="real-cube.css?v=1.0.7"><link rel="stylesheet" href="next-game.css?v=1.0.7"><link rel="stylesheet" href="rate-line.css?v=1.0.7"><link rel="stylesheet" href="setup-controls.css?v=1.0.7"><link rel="stylesheet" href="simple-dice.css?v=1.0.7"><link rel="stylesheet" href="compact-result.css?v=1.0.7"><link rel="stylesheet" href="rate-gold.css?v=1.0.7"><link rel="stylesheet" href="flip-rate-layout.css?v=1.0.7"><link rel="stylesheet" href="player-rate.css?v=1.0.7"><link rel="stylesheet" href="player-names.css?v=1.0.7"><link rel="stylesheet" href="mode-layout.css?v=1.0.7"><link rel="stylesheet" href="name-modal.css?v=1.0.7"><link rel="stylesheet" href="clean-controls.css?v=1.0.7"><link rel="stylesheet" href="rate-dice-controls.css?v=1.0.7"><link rel="stylesheet" href="quad.css?v=1.0.7">
+</head>
+<body>
+  <header class="topbar"><a href="../../" class="brand"><span class="logo">⚃</span><span><b>LOGIC LAB</b><small>4 DICE GAME</small></span></a><span class="version">v1.0.7</span></header>
+  <main>
+    <section class="hero"><div><p class="eyebrow">FOUR DICE. FOUR RULES.</p><h1>フォーダイス<br><span>ちんちろ</span></h1><p>4個のサイコロを、4つの判定方式で遊びます。</p></div></section>
+
+    <section class="game-panel">
+      <div class="mode-switch" role="group" aria-label="追加ルールのスイッチ">
+        <button class="mode-button active" data-feature="flip" aria-pressed="true">裏判定 <b>ON</b><br><small>出目だけ裏返す</small></button>
+        <button class="mode-button active" data-feature="rate" aria-pressed="true">レート <b>ON</b><br><small>倍率を累積する</small></button>
+        <button id="rateDiceButton" class="mode-button rate-dice-toggle" aria-pressed="false">初期レートダイス <b>OFF</b><br><small>サイコロで決める</small></button>
+        <button class="mode-button" data-feature="gold" aria-pressed="false">金色ダイス <b>OFF</b><br><small>1/36で全面6</small></button>
+      </div>
+      <div class="quad-mode-panel"><label><small>4ダイス判定方式</small><select id="quadMode"><option value="manual">① 1個を自分で捨てる</option><option value="auto">② 最強の3個を自動採用</option><option value="four" selected>③ 4個すべてで新役判定</option><option value="effect">④ 3個で判定＋効果ダイス</option></select></label><p id="quadHelp">4個すべてを使い、確率に合わせた専用役で判定します。</p></div>
+      <div class="setup-panel">
+        <div class="people-config"><label class="count-control"><small>参加人数</small><select id="playerCount"><option value="2">2人</option><option value="3">3人</option><option value="4" selected>4人</option><option value="5">5人</option><option value="6">6人</option><option value="7">7人</option><option value="8">8人</option></select></label><button id="openNamesButton" type="button">名前を設定</button></div>
+        <label class="rate-count-control"><small>レート用ダイス</small><select id="rateDiceCount" disabled><option value="1" selected>1個</option><option value="2">2個</option><option value="3">3個</option></select></label>
+        <button id="startButton" class="rate-button">レートを決める</button>
+        <div class="total-rate"><p id="rateFormula" class="rate-equation"><span>初期レート <b id="baseRateText" class="rate-die"><span class="mini-rate-die" aria-label="1の目"><span class="pips value-1"><i></i></span></span></b></span><i>×</i><span>現在の追加レート <b id="additionalRateText">1</b></span><i>＝</i><span>現在の倍率 <strong id="totalRate">1</strong></span></p></div>
+      </div>
+      <div id="players" class="players" aria-label="参加プレイヤー"></div>
+      <div id="roundStatus" class="round-status">通常ラウンド：全員が1回ずつ勝負</div>
+      <div class="phase"><span id="phaseBadge">準備</span><p id="message">開始設定を決めてください</p></div>
+      <div class="dice-stage four-dice-stage" id="diceStage" aria-label="サイコロ4個">
+        <div class="die-card"><small>表</small><div class="die" data-die="0">⚀</div><em data-back="0">裏：6</em></div>
+        <div class="die-card"><small>表</small><div class="die" data-die="1">⚀</div><em data-back="1">裏：6</em></div>
+        <div class="die-card"><small>表</small><div class="die" data-die="2">⚀</div><em data-back="2">裏：6</em></div>
+        <div class="die-card"><small>表</small><div class="die" data-die="3">⚀</div><em data-back="3">裏：6</em></div>
+      </div>
+      <div id="effectGuide" class="effect-guide" hidden>
+        <strong><span>4個目</span>が効果ダイス</strong>
+        <ul><li><b>1</b>効果なし</li><li><b>2</b>目なし時に3個振り直し</li><li><b>3</b>最低目を1個振り直し</li><li><b>4</b>判定ダイスを全裏返し</li><li><b>5</b>役倍率＋1</li><li><b>6</b>役倍率×2</li></ul>
+        <small>2・3の振り直しは自分で選択できます。5・6は元の役が倍率2以上のときだけ発動します。効果ダイスは裏返らず、ゴールド判定の対象にもなりません。</small>
+      </div>
+      <div id="rerollChoice" class="reroll-choice" hidden><p id="rerollPrompt">振り直しますか？</p><div><button id="acceptReroll" type="button">🎲 振り直す</button><button id="keepRoll" type="button">このまま判定</button></div></div>
+      <div class="result" id="result" aria-live="polite"><small>判定結果</small><strong id="resultName">まだ振っていません</strong><p id="resultDetail">判定に使う出目だけを裏返します</p><b id="multiplier">―</b></div>
+      <button id="rollButton" disabled><span>🎲</span> 先に開始設定を決める</button>
+      <button id="nextGameButton" class="next-game-button" hidden>↻ 次のゲームを始める</button>
+    </section>
+    <div id="nameModal" class="name-modal" hidden>
+      <section class="name-dialog" role="dialog" aria-modal="true" aria-labelledby="nameDialogTitle">
+        <div class="name-dialog-head"><div><p class="eyebrow">PLAYER SETTINGS</p><h2 id="nameDialogTitle">プレイヤー名を入力</h2></div><button id="closeNamesButton" type="button" aria-label="閉じる">×</button></div>
+        <div id="playerNameInputs" class="player-name-inputs" aria-label="プレイヤー名の設定"></div>
+        <button id="saveNamesButton" class="save-names-button" type="button">この名前で決定</button>
+      </section>
+    </div>
+
+    <section class="rules"><div><p class="eyebrow">4 DICE RULE</p><h2>4個すべてで判定する場合の新役</h2><p>役がある場合は、その出目になった同じ目を裏返します。例：2・2・4・5では、出目の2・2だけを裏返して5・5・4・5（5の三つぞろい）として判定します。目なしは裏返しません。</p></div><div class="rule-grid quad-rules">
+      <article><b>⚀⚀⚀⚀</b><span><strong>四つピン</strong><small>勝ち ×10</small></span></article><article><b>⚁⚁⚁⚁</b><span><strong>四つぞろい</strong><small>勝ち ×6</small></span></article><article><b>⚂⚃⚄⚅</b><span><strong>三四五六</strong><small>勝ち ×4</small></span></article><article><b>⚁⚂⚃⚄</b><span><strong>二三四五</strong><small>勝ち ×4</small></span></article><article><b>⚀⚁⚂⚃</b><span><strong>一二三四</strong><small>負け ×4</small></span></article><article><b>⚁⚁⚄⚄</b><span><strong>二組のペア</strong><small>勝ち ×3</small></span></article><article><b>⚂⚂⚂⚄</b><span><strong>三つぞろい</strong><small>勝ち ×2</small></span></article><article><b>⚁⚁⚂⚅</b><span><strong>一組のペア</strong><small>通常 ×1</small></span></article>
+    </div><p class="gold-note">★ 裏判定・レート・初期レートダイス・ゴールド・名前・サドンデスは通常の「ちんちろ」と共通です。</p></section>
+  </main>
+  <script src="app.js?v=1.0.7"></script>
+</body></html>

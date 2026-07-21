@@ -1,0 +1,18 @@
+.mode-switch .rate-dice-toggle { min-height: 52px; padding: 6px 3px; border-radius: 16px; font-size: .8rem; }
+.mode-switch .rate-dice-toggle b { margin: 0; padding: 0; color: inherit; background: transparent; }
+.mode-switch .rate-dice-toggle small { margin: 0; color: inherit; font-size: .62rem; opacity: .85; }
+.mode-switch .rate-dice-toggle.active { color: #fff; background: #725be0; }
+.mode-switch .rate-dice-toggle:disabled { color: #aaa3b8; border-color: #e2dee9; background: #f2f0f4; box-shadow: none; opacity: .7; }
+.rate-count-control { display: flex; min-height: 64px; padding: 8px 11px; border: 2px solid #ddd6ef; border-radius: 14px; justify-content: center; flex-direction: column; background: #f8f6ff; }
+.rate-count-control small { color: #746b88; font-size: .6rem; }
+.rate-count-control select { width: 100%; border: 0; color: #352d4a; background: transparent; font: 900 1rem inherit; cursor: pointer; }
+.rate-count-control select:disabled { color: #aaa4b3; cursor: not-allowed; }
+.setup-panel { grid-template-columns: 120px 120px auto minmax(380px,1fr) !important; }
+.rate-dice-group { display: inline-flex; gap: 3px; }
+.rate-die .rate-dice-group .mini-rate-die { width: 22px; height: 22px; border-radius: 5px; }
+.rate-die .rate-dice-group .mini-rate-die .pips i { width: 4px; height: 4px; }
+.rate-equation > span:first-child { min-width: 82px; }
+.rate-equation > span:first-child .rate-die { width: auto; max-width: 94px; gap: 2px; }
+.rate-sum { color: #6e6680; font-size: .55rem; white-space: nowrap; }
+@media (max-width: 900px) { .setup-panel { grid-template-columns: 1fr 1fr !important; } }
+@media (max-width: 600px) { .mode-switch { grid-template-columns: repeat(2,1fr); } }

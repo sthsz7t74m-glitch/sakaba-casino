@@ -1,0 +1,4 @@
+.player .personal-rate { display: block; margin-top: 4px; color: #7b61e8; font-size: .58rem; font-weight: 900; }
+.player.active .personal-rate,
+.player.loser .personal-rate { color: #fff; }
+@media (max-width: 760px) { .player .personal-rate { font-size: .5rem; } }

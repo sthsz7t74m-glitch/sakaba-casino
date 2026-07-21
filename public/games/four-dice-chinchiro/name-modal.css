@@ -1,0 +1,11 @@
+.people-config { display: grid; grid-template-columns: 1fr; gap: 5px; }
+.people-config #openNamesButton { padding: 6px; border: 0; border-radius: 8px; color: #fff; background: #7b61e8; font: 900 .62rem inherit; cursor: pointer; }
+.name-modal[hidden] { display: none; }
+.name-modal { position: fixed; inset: 0; z-index: 100; display: grid; padding: 18px; place-items: center; background: #211a35aa; backdrop-filter: blur(7px); }
+.name-dialog { width: min(680px,100%); max-height: calc(100vh - 36px); overflow: auto; padding: 22px; border: 5px solid #fff; border-radius: 25px; background: #fffaf5; box-shadow: 0 20px 70px #17102566; }
+.name-dialog-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 15px; }
+.name-dialog-head h2 { margin: 0 0 15px; }
+.name-dialog-head > button { width: 42px; height: 42px; border: 0; border-radius: 50%; color: #fff; background: #f06c55; font-size: 1.5rem; cursor: pointer; }
+.name-modal .player-name-inputs { grid-template-columns: repeat(2,minmax(0,1fr)); }
+.save-names-button { display: block; width: min(340px,100%); min-height: 52px; margin: 18px auto 0; border: 3px solid #fff; border-radius: 15px; color: #fff; background: linear-gradient(135deg,#7b61e8,#45b9c4); box-shadow: 0 5px 0 #4e3ca7; font: 900 .9rem inherit; cursor: pointer; }
+@media (max-width: 520px) { .name-modal .player-name-inputs { grid-template-columns: 1fr; } .name-dialog { padding: 15px; } }

@@ -1,0 +1,28 @@
+/* A quieter, unified control palette. */
+.mode-switch { gap: 7px; }
+.mode-switch .mode-button,
+.mode-switch .mode-button:first-child,
+.mode-switch .mode-button:last-child {
+  min-height: 52px;
+  border: 2px solid #d8d0ef;
+  color: #5b4b88;
+  background: #f6f3ff;
+  box-shadow: none;
+  transition: background .18s, color .18s, border-color .18s, transform .18s;
+}
+.mode-switch .mode-button.active,
+.mode-switch .mode-button:first-child.active,
+.mode-switch .mode-button:last-child.active {
+  border-color: #6f58d8;
+  color: #fff;
+  background: #725be0;
+  box-shadow: 0 4px 0 #4e3ca7;
+}
+.mode-switch .mode-button:active { transform: translateY(2px); }
+.mode-switch .mode-button b { display: inline-block; min-width: 30px; }
+.setup-panel { border-color: #e2dced; background: #fff; box-shadow: none; }
+.player-name-inputs input { font-size: 16px !important; line-height: 1.25; }
+@media (max-width: 600px) {
+  .mode-switch .mode-button { min-height: 48px; }
+  .player-name-inputs input { font-size: 16px !important; }
+}
