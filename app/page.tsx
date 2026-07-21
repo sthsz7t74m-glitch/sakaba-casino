@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { findAnswerWords } from "./word-data";
 
-type Screen = "lobby" | "chinchiro" | "classicChinchiro" | "dosukoi" | "ngword" | "majority" | "bomb" | "gesture" | "fiveSeconds" | "matchAll" | "wordWolf" | "firstImpression";
+type Screen = "lobby" | "chinchiro" | "classicChinchiro" | "dosukoi" | "ngword" | "majority" | "bomb" | "gesture" | "fiveSeconds" | "matchAll" | "wordWolf" | "firstImpression" | "forbiddenKana" | "noKatakana" | "rankingGuess" | "drawingSync";
 
 const diceGlyphs = ["⚀", "⚁", "⚂", "⚃", "⚄", "⚅"];
 const kana = ["あ","い","う","え","お","か","き","く","け","こ","さ","し","す","せ","そ","た","ち","つ","て","と","な","に","ぬ","ね","の","は","ひ","ふ","へ","ほ","ま","み","む","め","も","や","ゆ","よ","ら","り","る","れ","ろ","わ"];
@@ -28,6 +28,16 @@ const gestureWords = ["ゴリラ","歯みがき","寝坊","野球","ラーメン
 const matchPrompts = ["赤いものといえば？","夏の食べ物といえば？","人気の動物といえば？","コンビニで買うものといえば？","日本の観光地といえば？","丸いものといえば？","朝ごはんといえば？","強いスポーツ選手といえば？"];
 const wolfPairs = [["うどん","そば"],["犬","猫"],["海","プール"],["映画館","動画配信"],["焼肉","しゃぶしゃぶ"],["東京","大阪"],["コーヒー","紅茶"],["花火","イルミネーション"]];
 const impressionPrompts = ["一番早起きが得意そうな人","無人島でも生き残りそうな人","実は一番ロマンチストそうな人","宝くじを当てそうな人","秘密を守るのが上手そうな人","旅行の計画が上手そうな人","突然有名になりそうな人","一番やさしいと思う人"];
+const talkTopics = ["最近ハマっていること","行ってみたい旅行先","好きな食べ物","子どもの頃の思い出","理想の休日","最近笑ったこと","好きな季節","おすすめしたい作品"];
+const katakanaWords = ["スマートフォン","コンビニ","エレベーター","アイスクリーム","サブスクリプション","リモコン","ジェットコースター","ハンバーガー","パソコン","イヤホン","インターネット","カラオケ"];
+const rankingQuestions = [
+  {q:"日本で面積が大きい都道府県 TOP3", answers:["北海道","岩手県","福島県"]},
+  {q:"世界で人口が多い国 TOP3（目安）", answers:["インド","中国","アメリカ"]},
+  {q:"五十音順で早い動物 TOP3", answers:["アザラシ","アシカ","アヒル"]},
+  {q:"太陽系で太陽に近い惑星 TOP3", answers:["水星","金星","地球"]},
+  {q:"日本の高い山 TOP3", answers:["富士山","北岳","奥穂高岳・間ノ岳"]},
+];
+const drawingPrompts = ["猫","花火","自転車","富士山","ラーメン","宇宙人","誕生日ケーキ","ペンギン","ロボット","温泉","ドラゴン","おにぎり"];
 
 function rand(max: number) { return Math.floor(Math.random() * max); }
 function rollDie() { return rand(6) + 1; }
@@ -76,6 +86,10 @@ export default function Home() {
     {screen === "matchAll" && <MatchAll back={goLobby} />}
     {screen === "wordWolf" && <WordWolf back={goLobby} />}
     {screen === "firstImpression" && <FirstImpression back={goLobby} />}
+    {screen === "forbiddenKana" && <ForbiddenKana back={goLobby} />}
+    {screen === "noKatakana" && <NoKatakana back={goLobby} />}
+    {screen === "rankingGuess" && <RankingGuess back={goLobby} />}
+    {screen === "drawingSync" && <DrawingSync back={goLobby} />}
   </main>;
 }
 
@@ -92,6 +106,10 @@ function Lobby({ open }: { open: (screen: Screen) => void }) {
     {id:"matchAll",icon:"◎",name:"全員一致",en:"MATCH ALL",tag:"答えをそろえよう",color:"yellow",badge:"NEW"},
     {id:"wordWolf",icon:"🐺",name:"ワードウルフ",en:"WORD WOLF",tag:"少数派を見つけよう",color:"blue",badge:"NEW"},
     {id:"firstImpression",icon:"👑",name:"第一印象",en:"FIRST IMPRESSION",tag:"せーので指さし",color:"pink",badge:"NEW"},
+    {id:"forbiddenKana",icon:"禁",name:"禁止文字トーク",en:"FORBIDDEN LETTER",tag:"その文字を言ったら負け",color:"coral",badge:"NEW"},
+    {id:"noKatakana",icon:"ア",name:"カタカナ禁止",en:"NO KATAKANA",tag:"日本語だけで説明",color:"blue",badge:"NEW"},
+    {id:"rankingGuess",icon:"🥇",name:"ランキング当て",en:"TOP THREE",tag:"TOP3を順番どおりに",color:"yellow",badge:"NEW"},
+    {id:"drawingSync",icon:"🎨",name:"以心伝心お絵描き",en:"DRAW TOGETHER",tag:"同じ絵を描けるかな",color:"purple",badge:"NEW"},
   ];
 
   return <div className="lobby">
@@ -110,7 +128,7 @@ function Lobby({ open }: { open: (screen: Screen) => void }) {
       <div className="hero-icons" aria-hidden="true"><span>🎲</span><span>🎉</span><span>💬</span></div>
     </section>
 
-    <div className="section-title"><div><b>ALL GAMES</b><h2>遊べるゲーム</h2></div><span>全11種類</span></div>
+    <div className="section-title"><div><b>ALL GAMES</b><h2>遊べるゲーム</h2></div><span>全15種類</span></div>
     <section className="game-grid">
       {games.map(game => <button className={"game-card " + game.color} key={game.id} onClick={() => open(game.id)}>
         <span className="card-badge">{game.badge}</span>
@@ -119,7 +137,7 @@ function Lobby({ open }: { open: (screen: Screen) => void }) {
         <span className="arrow">›</span>
       </button>)}
     </section>
-    <footer><span>ルールは各ゲーム内で確認できます</span><b>v1.2.0</b></footer>
+    <footer><span>ルールは各ゲーム内で確認できます</span><b>v1.3.0</b></footer>
   </div>;
 }
 
@@ -487,4 +505,30 @@ function FirstImpression({ back }: { back: () => void }) {
     {!shown?<button className="primary" onClick={()=>setShown(true)}>せーので指さす！</button>:<><div className="timing-result">一番多く指された人はだれ？</div><button className="primary" onClick={next}>次のお題</button></>}
     <p className="howto">3・2・1で、お題に一番当てはまる人を全員同時に指さします。</p>
   </section></div>;
+}
+
+function ForbiddenKana({ back }: { back: () => void }) {
+  const [letter,setLetter]=useState(()=>kana[rand(kana.length)]); const [topic,setTopic]=useState(()=>talkTopics[rand(talkTopics.length)]); const [running,setRunning]=useState(false); const [seconds,setSeconds]=useState(60);
+  useEffect(()=>{if(!running)return;const t=window.setInterval(()=>setSeconds(s=>{if(s<=1){window.clearInterval(t);setRunning(false);return 0}return s-1}),1000);return()=>window.clearInterval(t)},[running]);
+  const reset=()=>{setLetter(kana[rand(kana.length)]);setTopic(talkTopics[rand(talkTopics.length)]);setSeconds(60);setRunning(false)};
+  return <div className="game-page"><GameHeader title="禁止文字トーク" subtitle="FORBIDDEN LETTER" icon="禁" onBack={back}/><section className="play-card center-card"><p className="kicker">今回の禁止文字</p><strong className="party-prompt">「{letter}」</strong><h2>話題：{topic}</h2><div className="timing-result">残り <b>{seconds}</b> 秒</div><button className="primary" onClick={()=>seconds===0?reset():setRunning(v=>!v)}>{seconds===0?"次のゲーム":running?"一時停止":"60秒スタート"}</button><button className="secondary" onClick={reset}>文字と話題を変える</button><p className="howto">禁止文字を含む言葉を口にした人がアウト。聞き逃さないよう全員でチェック！</p></section></div>;
+}
+
+function NoKatakana({ back }: { back: () => void }) {
+  const [word,setWord]=useState(()=>katakanaWords[rand(katakanaWords.length)]); const [show,setShow]=useState(false);
+  const next=()=>{let n=katakanaWords[rand(katakanaWords.length)];while(n===word)n=katakanaWords[rand(katakanaWords.length)];setWord(n);setShow(false)};
+  return <div className="game-page"><GameHeader title="カタカナ禁止" subtitle="NO KATAKANA" icon="ア" onBack={back}/><section className="play-card center-card"><span className="big-emoji">🤐</span><h2>カタカナを使わず説明！</h2><strong className="party-prompt">{show?word:"説明役だけ見てね"}</strong>{show?<button className="primary" onClick={next}>次のお題</button>:<button className="reveal-button" onClick={()=>setShow(true)}>お題を見る</button>}<p className="howto">お題そのものはもちろん、説明中もカタカナ禁止。ほかの人が当てたら成功！</p></section></div>;
+}
+
+function RankingGuess({ back }: { back: () => void }) {
+  const [item,setItem]=useState(()=>rankingQuestions[rand(rankingQuestions.length)]); const [show,setShow]=useState(false);
+  const next=()=>{let n=rankingQuestions[rand(rankingQuestions.length)];while(n.q===item.q)n=rankingQuestions[rand(rankingQuestions.length)];setItem(n);setShow(false)};
+  return <div className="game-page"><GameHeader title="ランキング当て" subtitle="TOP THREE" icon="🥇" onBack={back}/><section className="play-card center-card"><p className="kicker">順番まで当てよう</p><strong className="party-prompt">{item.q}</strong>{show?<><div className="rank-answer">{item.answers.map((a,i)=><div key={a}><b>{i+1}</b><span>{a}</span></div>)}</div><button className="primary" onClick={next}>次のランキング</button></>:<button className="primary" onClick={()=>setShow(true)}>答えを見る</button>}<p className="howto">相談してTOP3を予想。3つ全部と順番まで一致すれば完全正解！</p></section></div>;
+}
+
+function DrawingSync({ back }: { back: () => void }) {
+  const [prompt,setPrompt]=useState(()=>drawingPrompts[rand(drawingPrompts.length)]); const [phase,setPhase]=useState<"ready"|"draw"|"compare">("ready"); const [seconds,setSeconds]=useState(30);
+  useEffect(()=>{if(phase!=="draw")return;const t=window.setInterval(()=>setSeconds(s=>{if(s<=1){window.clearInterval(t);setPhase("compare");return 0}return s-1}),1000);return()=>window.clearInterval(t)},[phase]);
+  const next=()=>{let n=drawingPrompts[rand(drawingPrompts.length)];while(n===prompt)n=drawingPrompts[rand(drawingPrompts.length)];setPrompt(n);setSeconds(30);setPhase("ready")};
+  return <div className="game-page"><GameHeader title="以心伝心お絵描き" subtitle="DRAW TOGETHER" icon="🎨" onBack={back}/><section className="play-card center-card"><p className="kicker">全員同時に描こう</p><strong className="party-prompt">{prompt}</strong>{phase==="ready"&&<button className="primary" onClick={()=>setPhase("draw")}>30秒スタート</button>}{phase==="draw"&&<><div className="timing-result">残り <b>{seconds}</b> 秒</div><button className="primary" onClick={()=>setPhase("compare")}>描けた！</button></>}{phase==="compare"&&<><h2>せーので絵を見せよう！</h2><button className="primary" onClick={next}>次のお題</button></>}<p className="howto">紙やスマホのメモに描き、構図やポーズが一番似ていた2人が勝ち！</p></section></div>;
 }
