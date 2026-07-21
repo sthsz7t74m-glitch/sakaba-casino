@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { findAnswerWords } from "./word-data";
 
-type Screen = "lobby" | "chinchiro" | "classicChinchiro" | "dosukoi" | "ngword" | "majority" | "bomb" | "gesture";
+type Screen = "lobby" | "chinchiro" | "classicChinchiro" | "dosukoi" | "ngword" | "majority" | "bomb" | "gesture" | "fiveSeconds" | "matchAll" | "wordWolf" | "firstImpression";
 
 const diceGlyphs = ["⚀", "⚁", "⚂", "⚃", "⚄", "⚅"];
 const kana = ["あ","い","う","え","お","か","き","く","け","こ","さ","し","す","せ","そ","た","ち","つ","て","と","な","に","ぬ","ね","の","は","ひ","ふ","へ","ほ","ま","み","む","め","も","や","ゆ","よ","ら","り","る","れ","ろ","わ"];
@@ -25,6 +25,9 @@ const majorityQuestions = [
 ];
 const bombCategories = ["食べ物","動物","地名","有名人","身近にある物","3文字以上の言葉"];
 const gestureWords = ["ゴリラ","歯みがき","寝坊","野球","ラーメン","ジェットコースター","カラオケ","猫","忍者","サーフィン","スマホ","宇宙人","料理","筋トレ","酔っぱらい","オーケストラ","温泉","釣り","花火","ゾンビ","告白","電車","美容師","相撲"];
+const matchPrompts = ["赤いものといえば？","夏の食べ物といえば？","人気の動物といえば？","コンビニで買うものといえば？","日本の観光地といえば？","丸いものといえば？","朝ごはんといえば？","強いスポーツ選手といえば？"];
+const wolfPairs = [["うどん","そば"],["犬","猫"],["海","プール"],["映画館","動画配信"],["焼肉","しゃぶしゃぶ"],["東京","大阪"],["コーヒー","紅茶"],["花火","イルミネーション"]];
+const impressionPrompts = ["一番早起きが得意そうな人","無人島でも生き残りそうな人","実は一番ロマンチストそうな人","宝くじを当てそうな人","秘密を守るのが上手そうな人","旅行の計画が上手そうな人","突然有名になりそうな人","一番やさしいと思う人"];
 
 function rand(max: number) { return Math.floor(Math.random() * max); }
 function rollDie() { return rand(6) + 1; }
@@ -69,6 +72,10 @@ export default function Home() {
     {screen === "majority" && <Majority back={goLobby} />}
     {screen === "bomb" && <BombShiritori back={goLobby} />}
     {screen === "gesture" && <Gesture back={goLobby} />}
+    {screen === "fiveSeconds" && <FiveSeconds back={goLobby} />}
+    {screen === "matchAll" && <MatchAll back={goLobby} />}
+    {screen === "wordWolf" && <WordWolf back={goLobby} />}
+    {screen === "firstImpression" && <FirstImpression back={goLobby} />}
   </main>;
 }
 
@@ -81,6 +88,10 @@ function Lobby({ open }: { open: (screen: Screen) => void }) {
     {id:"majority",icon:"A/B",name:"究極の二択",en:"MAJORITY",tag:"みんなの本音",color:"yellow",badge:"NEW"},
     {id:"bomb",icon:"💣",name:"爆弾しりとり",en:"TIME BOMB",tag:"焦るほど面白い",color:"mint",badge:"NEW"},
     {id:"gesture",icon:"🙌",name:"ジェスチャー",en:"GESTURE",tag:"声なしで伝えよう",color:"purple",badge:"NEW"},
+    {id:"fiveSeconds",icon:"⏱",name:"5秒ぴったり",en:"JUST FIVE",tag:"体内時計で止めよう",color:"coral",badge:"NEW"},
+    {id:"matchAll",icon:"◎",name:"全員一致",en:"MATCH ALL",tag:"答えをそろえよう",color:"yellow",badge:"NEW"},
+    {id:"wordWolf",icon:"🐺",name:"ワードウルフ",en:"WORD WOLF",tag:"少数派を見つけよう",color:"blue",badge:"NEW"},
+    {id:"firstImpression",icon:"👑",name:"第一印象",en:"FIRST IMPRESSION",tag:"せーので指さし",color:"pink",badge:"NEW"},
   ];
 
   return <div className="lobby">
@@ -99,7 +110,7 @@ function Lobby({ open }: { open: (screen: Screen) => void }) {
       <div className="hero-icons" aria-hidden="true"><span>🎲</span><span>🎉</span><span>💬</span></div>
     </section>
 
-    <div className="section-title"><div><b>ALL GAMES</b><h2>遊べるゲーム</h2></div><span>全7種類</span></div>
+    <div className="section-title"><div><b>ALL GAMES</b><h2>遊べるゲーム</h2></div><span>全11種類</span></div>
     <section className="game-grid">
       {games.map(game => <button className={"game-card " + game.color} key={game.id} onClick={() => open(game.id)}>
         <span className="card-badge">{game.badge}</span>
@@ -108,7 +119,7 @@ function Lobby({ open }: { open: (screen: Screen) => void }) {
         <span className="arrow">›</span>
       </button>)}
     </section>
-    <footer><span>ルールは各ゲーム内で確認できます</span><b>v1.1.0</b></footer>
+    <footer><span>ルールは各ゲーム内で確認できます</span><b>v1.2.0</b></footer>
   </div>;
 }
 
@@ -428,4 +439,52 @@ function Gesture({ back }: { back: () => void }) {
       {finished && <><span className="big-emoji">🎊</span><h2>タイムアップ！</h2><div className="final-score"><b>{score}</b><span>問正解</span></div><button className="primary" onClick={start}>もう一度</button></>}
     </section>
   </div>;
+}
+
+function FiveSeconds({ back }: { back: () => void }) {
+  const [phase,setPhase] = useState<"ready"|"running"|"result">("ready");
+  const [started,setStarted] = useState(0);
+  const [elapsed,setElapsed] = useState(0);
+  const start = () => { setStarted(performance.now()); setElapsed(0); setPhase("running"); };
+  const stop = () => { setElapsed((performance.now()-started)/1000); setPhase("result"); };
+  return <div className="game-page"><GameHeader title="5秒ぴったり" subtitle="JUST FIVE" icon="⏱" onBack={back}/><section className="play-card center-card">
+    <span className="big-emoji">⏱️</span><h2>{phase==="ready"?"5秒を感覚で当てよう！":phase==="running"?"5秒だと思ったら止めて！":`${elapsed.toFixed(2)} 秒`}</h2>
+    {phase==="result" && <div className="timing-result">誤差 <b>{Math.abs(elapsed-5).toFixed(2)}</b> 秒</div>}
+    <button className="primary" onClick={phase==="running"?stop:start}>{phase==="running"?"ストップ！":phase==="result"?"もう一度":"スタート"}</button>
+    <p className="howto">スタート後は時間を表示しません。全員で挑戦して、5秒に一番近い人が勝ち！</p>
+  </section></div>;
+}
+
+function MatchAll({ back }: { back: () => void }) {
+  const [prompt,setPrompt] = useState(()=>matchPrompts[rand(matchPrompts.length)]);
+  const [show,setShow] = useState(false);
+  const next=()=>{let n=matchPrompts[rand(matchPrompts.length)]; while(n===prompt)n=matchPrompts[rand(matchPrompts.length)];setPrompt(n);setShow(false)};
+  return <div className="game-page"><GameHeader title="全員一致" subtitle="MATCH ALL" icon="◎" onBack={back}/><section className="play-card center-card">
+    <p className="kicker">みんなの答えをそろえよう</p><strong className="party-prompt">{show?prompt:"お題はまだ秘密"}</strong>
+    {!show?<button className="primary" onClick={()=>setShow(true)}>お題を表示</button>:<button className="primary" onClick={next}>次のお題</button>}
+    <p className="howto">お題を見たら相談せず、せーので答えます。全員同じ答えなら成功！</p>
+  </section></div>;
+}
+
+function WordWolf({ back }: { back: () => void }) {
+  const [count,setCount]=useState(4); const [phase,setPhase]=useState<"setup"|"pass"|"talk"|"answer">("setup");
+  const [index,setIndex]=useState(0); const [revealed,setRevealed]=useState(false); const [words,setWords]=useState<string[]>([]); const [pair,setPair]=useState<string[]>([]);
+  const start=()=>{const p=wolfPairs[rand(wolfPairs.length)];const wolf=rand(count);setPair(p);setWords(Array.from({length:count},(_,i)=>i===wolf?p[1]:p[0]));setIndex(0);setRevealed(false);setPhase("pass")};
+  const next=()=>{if(index+1===count){setPhase("talk");return}setIndex(i=>i+1);setRevealed(false)};
+  return <div className="game-page"><GameHeader title="ワードウルフ" subtitle="WORD WOLF" icon="🐺" onBack={back}/><section className="play-card center-card">
+    {phase==="setup"&&<><span className="big-emoji">🐺</span><h2>少数派を見つけよう</h2><label className="select-row">参加人数<select value={count} onChange={e=>setCount(Number(e.target.value))}>{[3,4,5,6,7,8,9,10].map(n=><option key={n}>{n}</option>)}</select></label><button className="primary" onClick={start}>ゲーム開始</button></>}
+    {phase==="pass"&&<><span className="turn-pill">{index+1} / {count}</span><h2>{index+1}人目だけ見てください</h2>{revealed?<><strong className="party-prompt">{words[index]}</strong><button className="primary" onClick={next}>隠して次の人へ</button></>:<button className="reveal-button" onClick={()=>setRevealed(true)}>自分のワードを見る</button>}</>}
+    {phase==="talk"&&<><span className="big-emoji">🗣️</span><h2>話し合いスタート！</h2><p>自分のワードを直接言わずに会話し、少数派を予想します。</p><button className="primary" onClick={()=>setPhase("answer")}>答え合わせ</button></>}
+    {phase==="answer"&&<><p className="kicker">ANSWER</p><h2>多数派「{pair[0]}」<br/>少数派「{pair[1]}」</h2><div className="answer-list">{words.map((w,i)=><div key={i}><span>{i+1}人目</span><b>{w}</b></div>)}</div><button className="primary" onClick={start}>もう一度</button></>}
+  </section></div>;
+}
+
+function FirstImpression({ back }: { back: () => void }) {
+  const [prompt,setPrompt]=useState(()=>impressionPrompts[rand(impressionPrompts.length)]); const [shown,setShown]=useState(false);
+  const next=()=>{let n=impressionPrompts[rand(impressionPrompts.length)];while(n===prompt)n=impressionPrompts[rand(impressionPrompts.length)];setPrompt(n);setShown(false)};
+  return <div className="game-page"><GameHeader title="第一印象" subtitle="FIRST IMPRESSION" icon="👑" onBack={back}/><section className="play-card center-card">
+    <span className="big-emoji">👉</span><p className="kicker">お題</p><strong className="party-prompt">{prompt}</strong>
+    {!shown?<button className="primary" onClick={()=>setShown(true)}>せーので指さす！</button>:<><div className="timing-result">一番多く指された人はだれ？</div><button className="primary" onClick={next}>次のお題</button></>}
+    <p className="howto">3・2・1で、お題に一番当てはまる人を全員同時に指さします。</p>
+  </section></div>;
 }
