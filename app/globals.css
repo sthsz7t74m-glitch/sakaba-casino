@@ -98,7 +98,7 @@ button:disabled{cursor:default;opacity:.48}
 .classic-table-top input{width:22px;height:22px;accent-color:#ff6d79}
 .classic-dice-cup{min-height:225px;display:grid;place-items:center}
 .classic-dice-cup>div{display:flex;justify-content:center;gap:10px}
-.die{display:inline-grid;place-items:center;width:94px;height:94px;color:#fff;background:#fff;border-radius:20px;font-size:105px;line-height:1;filter:drop-shadow(0 8px 0 #244d5360)}
+.die{display:inline-grid;place-items:center;width:94px;height:94px;color:#26304a;background:#fff;border-radius:20px;font-size:105px;line-height:1;filter:drop-shadow(0 8px 0 #244d5360)}
 .die.gold-die{color:#ffd42a;filter:drop-shadow(0 8px 0 #a86d0060)}
 .die.rolling{animation:classic-shake .12s infinite alternate}
 @keyframes classic-shake{to{transform:translateY(-7px) rotate(8deg)}}
