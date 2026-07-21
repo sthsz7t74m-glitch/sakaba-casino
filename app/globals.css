@@ -165,3 +165,110 @@ button{touch-action:manipulation}
 .game-card{grid-template-columns:48px 1fr 12px}
 .lobby{padding-top:30px}
 }
+
+/* Pop theme v0.3.0 */
+:root{
+  --ink:#26304a;
+  --muted:#69718a;
+  --gold:#ffbd2e;
+  --red:#ff5b70;
+  --navy:#5068d9;
+  --panel:#ffffff;
+  --line:#26304a18;
+  --black:#26304a;
+}
+
+html{background:#fff7e8}
+body{
+  background:
+    radial-gradient(circle at 8% 6%,#ffd55d 0 7%,transparent 7.2%),
+    radial-gradient(circle at 94% 12%,#8ae3dc 0 8%,transparent 8.2%),
+    radial-gradient(circle at 85% 82%,#ff9fbc 0 9%,transparent 9.2%),
+    linear-gradient(150deg,#fff8e9 0%,#f2f8ff 48%,#fff2f6 100%);
+  color:var(--ink);
+  font-family:"Hiragino Kaku Gothic ProN","Yu Gothic","Noto Sans JP",system-ui,sans-serif;
+  font-weight:600;
+}
+
+button,input{font-family:inherit}
+.app-shell:before,.app-shell:after{content:"";position:fixed;z-index:-1;border-radius:36px;transform:rotate(18deg);opacity:.55}
+.app-shell:before{width:120px;height:28px;background:#8b7cf6;left:-34px;top:38%}
+.app-shell:after{width:80px;height:24px;background:#ff7867;right:-20px;top:58%}
+.lobby,.game-page{color:var(--ink)}
+
+.brand-header{background:#ffffffd9;border:2px solid #26304a12;border-radius:22px;padding:10px 12px;box-shadow:0 8px 0 #26304a10}
+.lantern{background:linear-gradient(145deg,#ff6d78,#ff9d4b);border:3px solid #fff;border-radius:15px;font-family:inherit;font-weight:1000;color:#fff;box-shadow:0 5px 0 #d84561,0 9px 18px #ff5b7040}
+.brand-header p,.game-header p{color:#7769c9;font-weight:900}
+.brand-header h1,.game-header h1{font-family:inherit;font-weight:1000;letter-spacing:.02em}
+.brand-header h1 span{color:#ff4f6d}
+.chip-wallet{border:2px solid #f5a900;background:#fff2a6;color:var(--ink);border-radius:16px;box-shadow:0 5px 0 #edb629}
+.chip-wallet small{color:#7b6931;font-weight:800}
+.chip-wallet strong{color:#d77a00;font-weight:1000}
+
+.welcome-card{border:0;border-radius:28px;background:linear-gradient(135deg,#ff667d 0%,#ff9e5a 47%,#7e73e7 100%);box-shadow:0 10px 0 #d84c6d,0 18px 34px #ff66802b;color:#fff}
+.welcome-card:before{background-image:radial-gradient(circle,#fff4 0 3px,transparent 3.5px);background-size:23px 23px}
+.eyebrow,.welcome-card h2,.welcome-card p{color:#fff;text-shadow:0 2px 0 #8d426344}
+.welcome-card h2{font-weight:1000}
+.dice-art span{text-shadow:0 8px 0 #513b7c55,0 13px 18px #4f355055}
+.dice-art span:first-child{color:#fff9dc}
+.dice-art span:last-child{color:#54d9d0}
+
+.game-grid{gap:14px}
+.game-card{border:2px solid #26304a10;border-radius:23px;color:var(--ink);box-shadow:0 7px 0 #26304a16,0 13px 24px #4b53751a;transition:transform .15s ease,box-shadow .15s ease}
+.game-card:hover{transform:translateY(-2px);box-shadow:0 9px 0 #26304a16,0 16px 26px #4b537520}
+.game-card:active{transform:translateY(5px);box-shadow:0 2px 0 #26304a16}
+.game-card.red{background:#fff0f2}.game-card.navy{background:#edf2ff}.game-card.green{background:#e9fbf3}.game-card.purple{background:#f6edff}.game-card.amber{background:#fff8d9}.game-card.blue{background:#e9f8ff}
+.game-icon{border:2px solid #fff;background:#fff!important;border-radius:17px;box-shadow:0 5px 0 #26304a12;font-family:inherit;font-weight:1000}
+.game-card.red .game-icon{color:#ff5369}.game-card.navy .game-icon{color:#5068d9}.game-card.green .game-icon{color:#20a978}.game-card.purple .game-icon{color:#a45bd8}.game-card.amber .game-icon{color:#ef9400}.game-card.blue .game-icon{color:#299ed0}
+.game-copy small{color:#7c7592;font-weight:900}.game-copy strong{font-weight:1000}.game-copy em{color:#69718a;font-weight:800}.arrow{color:#59617d;font-weight:1000}
+.lobby footer{color:#6d748c;font-weight:800}.lobby footer b{color:#ff5369;background:#fff;border-radius:999px;padding:3px 9px}
+
+.game-header{background:#ffffffd9;border:2px solid #26304a12;border-radius:22px;padding:7px;margin-bottom:8px;box-shadow:0 7px 0 #26304a10}
+.back{border:0;background:#7769e8;color:#fff;box-shadow:0 4px 0 #5143b6;font-weight:1000}
+.mini-logo{filter:drop-shadow(0 3px 0 #26304a22)}
+.floating-chips{border:2px solid #ffbd2e;background:#fff4ac;color:var(--ink);box-shadow:0 6px 0 #e2a42b,0 12px 24px #6b55702b}
+.floating-chips span{color:#816215;font-weight:900}.floating-chips strong{color:#d36d00;font-weight:1000}
+
+.rule-strip span{background:#fff;border:2px solid #7769e83d;color:#564bb0;box-shadow:0 3px 0 #7769e820;font-weight:900}
+.table-card,.simple-stage{border:3px solid #fff;background:linear-gradient(145deg,#dff8ff,#f2edff);box-shadow:0 9px 0 #8ccad8,0 18px 34px #59618420;color:var(--ink)}
+.table-top{color:#505a74;font-weight:900}.table-top input,.dosukoi-toggles input{accent-color:#ff5b70}
+.die{color:#fff;text-shadow:0 5px 0 #59617d,0 9px 15px #59617d33;filter:drop-shadow(0 0 1px #59617d)}
+.die.gold-die{color:#ffd44e;text-shadow:0 5px 0 #d48a00;filter:drop-shadow(0 5px 8px #ffb40055)}
+.result-badge{background:#fff;color:#59617d;box-shadow:0 5px 0 #a7d4dc;font-weight:1000}
+.result-badge.win{color:#d57900;background:#fff0a8}.result-badge.lose{color:#dd4058;background:#ffe1e7}.result-badge.draw{color:#59617d;background:#fff}
+.micro-copy,.action-panel>p{color:#68718a;font-weight:800}
+.bet-bar button{border:2px solid #7769e83d;background:#fff;color:#6258b6;box-shadow:0 4px 0 #7769e822;font-weight:1000}
+.bet-bar button.selected{background:#ffd350;color:#654400;border-color:#f4ad13;box-shadow:0 5px 0 #dc9614}
+.primary{background:linear-gradient(135deg,#ff5b70,#ff8656);color:#fff;border:2px solid #fff;box-shadow:0 7px 0 #d8435d,0 13px 23px #ff5b7033;border-radius:18px;font-weight:1000}
+.primary:active{transform:translateY(5px);box-shadow:0 2px 0 #d8435d}
+.secondary{background:#fff;border:2px solid #7769e83d;color:#5f53b7;box-shadow:0 5px 0 #7769e822;font-weight:1000}
+
+.dosukoi-page{background:transparent;color:var(--ink)}
+.count-setting{background:#fff;color:var(--ink);border:2px solid #5068d925;box-shadow:0 5px 0 #5068d91f}
+.count-setting button{background:#6277e6;color:#fff;box-shadow:0 3px 0 #3f50ae}
+.dosukoi-toggles label{background:#fff;border:2px solid #ff7c912c;color:#5c647d;box-shadow:0 4px 0 #ff7c911c}
+.settings-actions button{color:#5d52b4;font-weight:900}
+.dosukoi-stage{background:linear-gradient(145deg,#fff3a9,#ffe1a3);color:var(--ink);box-shadow:inset 0 0 0 5px #ff667d,inset 0 0 0 9px #fff5c4,inset 0 0 0 12px #6277e6,0 9px 0 #e9a530,0 17px 28px #8f6a2528}
+.sumo-label{background:linear-gradient(135deg,#ff5c74,#ff8754);border-radius:999px;clip-path:none;box-shadow:0 4px 0 #d4435c}
+.prompt-pair strong{font-family:inherit;color:#e73f5d;font-weight:1000;text-shadow:0 4px 0 #fff}
+.prompt-pair b{color:#6277e6}.dosukoi-stage p b{color:#e73f5d}
+.examples>p{color:#69718a;font-weight:900}.examples>span{background:#fff;color:var(--ink);border:2px solid #ffbd2e55;box-shadow:0 4px 0 #ffbd2e33}.examples>span small{color:#69718a}.examples .judge-note{color:#69718a}
+.modal-backdrop{background:#4f4c78a8;backdrop-filter:blur(4px)}
+.help-modal{background:#fff;color:var(--ink);border:3px solid #ffbd2e;box-shadow:0 9px 0 #e4a528,0 20px 50px #3f446744}.help-modal h2{font-family:inherit;font-weight:1000;color:#e64762}.help-modal p{color:#5d667e}
+
+.playing-card{background:#fff;color:#ff4f69;border:4px solid #fff;box-shadow:0 8px 0 #72c4d7,0 16px 26px #4f55732b}.playing-card strong{font-family:inherit;font-weight:1000}
+.question{color:#3f4864;font-weight:1000}
+.split-actions button,.triple-actions button{background:#fff;color:#5068d9;border:2px solid #5068d930;box-shadow:0 5px 0 #5068d922;font-weight:1000}
+.split-actions button:last-child,.split-actions button.red-button{background:#ff5b70;color:#fff;border-color:#ff5b70;box-shadow:0 5px 0 #d33f57}
+.split-actions button.black{background:#46506a;color:#fff;border-color:#46506a;box-shadow:0 5px 0 #293147}
+.triple-actions .seven{background:#ffd350;color:#6e4b00;border-color:#f5b51f;box-shadow:0 6px 0 #dc9517}
+.roulette-wheel{border-color:#ffd45b;box-shadow:0 0 0 5px #fff,0 9px 0 #e0a11f,0 18px 34px #59618433}.roulette-wheel>div{background:#fff;color:var(--ink);border-color:#ffd45b}
+.coin{background:radial-gradient(circle at 35% 30%,#fff5a7,#ffd247 50%,#e59717);border-color:#fff4a3;color:#71500a;box-shadow:0 9px 0 #d89118,0 18px 34px #87601d33}.coin strong{font-family:inherit;font-weight:1000}
+.toast{background:#fff;color:var(--ink);border:3px solid #ffbd2e;box-shadow:0 6px 0 #e6a425,0 14px 28px #545c7e2b}
+
+@media(max-width:430px){
+  .brand-header{grid-template-columns:auto 1fr auto;padding:9px}
+  .lantern{width:40px;height:48px}
+  .chip-wallet{padding:7px 8px}
+  .game-card{min-height:120px}
+}
