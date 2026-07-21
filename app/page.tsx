@@ -3,8 +3,9 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { findAnswerWords } from "./word-data";
 
-type Screen = "lobby" | "chinchiro" | "dosukoi" | "ngword" | "majority" | "bomb" | "gesture";
+type Screen = "lobby" | "chinchiro" | "classicChinchiro" | "dosukoi" | "ngword" | "majority" | "bomb" | "gesture";
 
+const diceGlyphs = ["⚀", "⚁", "⚂", "⚃", "⚄", "⚅"];
 const kana = ["あ","い","う","え","お","か","き","く","け","こ","さ","し","す","せ","そ","た","ち","つ","て","と","な","に","ぬ","ね","の","は","ひ","ふ","へ","ほ","ま","み","む","め","も","や","ゆ","よ","ら","り","る","れ","ろ","わ"];
 const voicedKana = ["が","ぎ","ぐ","げ","ご","ざ","じ","ず","ぜ","ぞ","だ","で","ど","ば","び","ぶ","べ","ぼ","ぱ","ぴ","ぷ","ぺ","ぽ"];
 const ngWords = ["乾杯","かわいい","マジで","仕事","スマホ","眠い","おいしい","やばい","写真","明日","旅行","推し","ビール","ゲーム","ごめん","なるほど","たしかに","でも","最高","酔った","もう一杯","SNS","カラオケ","恋愛"];
@@ -26,6 +27,26 @@ const bombCategories = ["食べ物","動物","地名","有名人","身近にあ�
 const gestureWords = ["ゴリラ","歯みがき","寝坊","野球","ラーメン","ジェットコースター","カラオケ","猫","忍者","サーフィン","スマホ","宇宙人","料理","筋トレ","酔っぱらい","オーケストラ","温泉","釣り","花火","ゾンビ","告白","電車","美容師","相撲"];
 
 function rand(max: number) { return Math.floor(Math.random() * max); }
+function rollDie() { return rand(6) + 1; }
+
+function Dice({ value, rolling = false, gold = false }: { value: number; rolling?: boolean; gold?: boolean }) {
+  return <span className={`die ${rolling ? "rolling" : ""} ${gold ? "gold-die" : ""}`} aria-label={`サイコロの${value}`}>{diceGlyphs[value - 1]}</span>;
+}
+
+function judgeClassicChinchiro(dice: number[], reverse: boolean) {
+  const values = reverse ? dice.map(v => 7 - v) : dice;
+  const sorted = [...values].sort((a,b) => a-b);
+  if (sorted[0] === sorted[2]) return { label: sorted[0] === 1 ? "ピンゾロ" : `${sorted[0]}のゾロ目`, tone: "win" };
+  if (sorted.join("") === "456") return { label: "シゴロ", tone: "win" };
+  if (sorted.join("") === "123") return { label: "ヒフミ", tone: "lose" };
+  for (const v of [1,2,3,4,5,6]) {
+    if (values.filter(x => x === v).length === 2) {
+      const point = values.find(x => x !== v) ?? v;
+      return { label: `${point}の目`, tone: point >= 4 ? "win" : point <= 2 ? "lose" : "draw" };
+    }
+  }
+  return { label: "目なし", tone: "draw" };
+}
 
 function GameHeader({ title, subtitle, icon, onBack }: { title: string; subtitle: string; icon: string; onBack: () => void }) {
   return <header className="game-header">
@@ -42,6 +63,7 @@ export default function Home() {
   return <main className="app-shell">
     {screen === "lobby" && <Lobby open={setScreen} />}
     {screen === "chinchiro" && <FourDiceChinchiro back={goLobby} />}
+    {screen === "classicChinchiro" && <ClassicChinchiro back={goLobby} />}
     {screen === "dosukoi" && <Dosukoi back={goLobby} />}
     {screen === "ngword" && <NgWord back={goLobby} />}
     {screen === "majority" && <Majority back={goLobby} />}
@@ -53,6 +75,7 @@ export default function Home() {
 function Lobby({ open }: { open: (screen: Screen) => void }) {
   const games: {id: Screen; icon: string; name: string; en: string; tag: string; color: string; badge?: string}[] = [
     {id:"chinchiro",icon:"🎲",name:"フォーダイスちんちろ",en:"FOUR DICE",tag:"完成版 v1.0.7",color:"coral",badge:"定番"},
+    {id:"classicChinchiro",icon:"⚂",name:"ちんちろ",en:"CLASSIC CHINCHIRO",tag:"3個のサイコロで勝負",color:"mint",badge:"定番"},
     {id:"dosukoi",icon:"力",name:"どすこい",en:"DOSUKOI",tag:"言葉・ひらめき",color:"blue",badge:"定番"},
     {id:"ngword",icon:"㊙",name:"NGワード",en:"NG WORD",tag:"会話が盛り上がる",color:"pink",badge:"NEW"},
     {id:"majority",icon:"A/B",name:"究極の二択",en:"MAJORITY",tag:"みんなの本音",color:"yellow",badge:"NEW"},
@@ -76,7 +99,7 @@ function Lobby({ open }: { open: (screen: Screen) => void }) {
       <div className="hero-icons" aria-hidden="true"><span>🎲</span><span>🎉</span><span>💬</span></div>
     </section>
 
-    <div className="section-title"><div><b>ALL GAMES</b><h2>遊べるゲーム</h2></div><span>全6種類</span></div>
+    <div className="section-title"><div><b>ALL GAMES</b><h2>遊べるゲーム</h2></div><span>全7種類</span></div>
     <section className="game-grid">
       {games.map(game => <button className={"game-card " + game.color} key={game.id} onClick={() => open(game.id)}>
         <span className="card-badge">{game.badge}</span>
@@ -85,7 +108,7 @@ function Lobby({ open }: { open: (screen: Screen) => void }) {
         <span className="arrow">›</span>
       </button>)}
     </section>
-    <footer><span>ルールは各ゲーム内で確認できます</span><b>v1.0.0</b></footer>
+    <footer><span>ルールは各ゲーム内で確認できます</span><b>v1.1.0</b></footer>
   </div>;
 }
 
@@ -94,6 +117,42 @@ function FourDiceChinchiro({ back }: { back: () => void }) {
     <GameHeader title="フォーダイスちんちろ" subtitle="FOUR DICE CHINCHIRO" icon="🎲" onBack={back} />
     <div className="source-note"><b>完成版 v1.0.7</b><span>別Workで制作したゲームをそのまま収録</span></div>
     <iframe className="chinchiro-frame" src="games/four-dice-chinchiro/index.html" title="フォーダイスちんちろ v1.0.7" />
+  </div>;
+}
+
+function ClassicChinchiro({ back }: { back: () => void }) {
+  const [dice, setDice] = useState([1,2,3]);
+  const [rolling, setRolling] = useState(false);
+  const [reverse, setReverse] = useState(false);
+  const [gold, setGold] = useState(false);
+  const [round, setRound] = useState(0);
+  const [result, setResult] = useState<{label:string;tone:string}|null>(null);
+
+  const roll = () => {
+    if (rolling) return;
+    setRolling(true);
+    setResult(null);
+    window.setTimeout(() => {
+      const isGold = rand(36) === 0;
+      const next = isGold ? [6,6,6] : [rollDie(), rollDie(), rollDie()];
+      setDice(next);
+      setGold(isGold);
+      setResult(judgeClassicChinchiro(next, reverse));
+      setRound(r => r + 1);
+      setRolling(false);
+    }, 650);
+  };
+
+  return <div className="game-page classic-chinchiro-page">
+    <GameHeader title="ちんちろ" subtitle="CLASSIC CHINCHIRO" icon="⚂" onBack={back} />
+    <section className="classic-rule-strip"><span>ピンゾロ 5倍</span><span>ゾロ目 3倍</span><span>シゴロ 2倍</span><span>ヒフミ 2倍払い</span></section>
+    <section className="classic-table-card">
+      <div className="classic-table-top"><span>勝負 {round + 1}</span><label>裏目モード <input type="checkbox" checked={reverse} onChange={e => setReverse(e.target.checked)} /></label></div>
+      <div className="classic-dice-cup"><div>{dice.map((d,i) => <Dice key={i} value={d} rolling={rolling} gold={gold} />)}</div></div>
+      <div className={`classic-result ${result?.tone ?? ""}`}>{result ? (reverse ? `裏目 → ${result.label}` : result.label) : "サイコロを振って勝負！"}</div>
+      <p className="classic-note">同じ目が2個なら残り1個が「○の目」。ゴールドダイスは1/36です。</p>
+    </section>
+    <button className="primary classic-roll-button" onClick={roll} disabled={rolling}>{rolling ? "勝負中…" : "サイコロを振る"}</button>
   </div>;
 }
 
@@ -370,4 +429,3 @@ function Gesture({ back }: { back: () => void }) {
     </section>
   </div>;
 }
-
