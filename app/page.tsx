@@ -3,12 +3,12 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { findAnswerWords } from "./word-data";
 
-type Screen = "lobby" | "chinchiro" | "classicChinchiro" | "dosukoi" | "ngword" | "majority" | "bomb" | "gesture" | "fiveSeconds" | "matchAll" | "wordWolf" | "firstImpression" | "forbiddenKana" | "noKatakana" | "rankingGuess" | "drawingSync";
+type Screen = "lobby" | "chinchiro" | "classicChinchiro" | "dosukoi" | "ngword" | "majority" | "bomb" | "gesture" | "fiveSeconds" | "matchAll" | "wordWolf" | "firstImpression" | "forbiddenKana" | "noKatakana" | "rankingGuess" | "drawingSync" | "threeQuick" | "threeHints" | "commonPoint";
 
 const diceGlyphs = ["⚀", "⚁", "⚂", "⚃", "⚄", "⚅"];
 const kana = ["あ","い","う","え","お","か","き","く","け","こ","さ","し","す","せ","そ","た","ち","つ","て","と","な","に","ぬ","ね","の","は","ひ","ふ","へ","ほ","ま","み","む","め","も","や","ゆ","よ","ら","り","る","れ","ろ","わ"];
 const voicedKana = ["が","ぎ","ぐ","げ","ご","ざ","じ","ず","ぜ","ぞ","だ","で","ど","ば","び","ぶ","べ","ぼ","ぱ","ぴ","ぷ","ぺ","ぽ"];
-const ngWords = ["乾杯","かわいい","マジで","仕事","スマホ","眠い","おいしい","やばい","写真","明日","旅行","推し","ビール","ゲーム","ごめん","なるほど","たしかに","でも","最高","酔った","もう一杯","SNS","カラオケ","恋愛"];
+const ngWords = ["乾杯","かわいい","マジで","仕事","スマホ","眠い","おいしい","やばい","写真","明日","旅行","推し","ビール","ゲーム","ごめん","なるほど","たしかに","でも","最高","酔った","もう一杯","SNS","カラオケ","恋愛","ほんとに","すごい","わかる","大丈夫","お腹すいた","暑い","寒い","疲れた","楽しい","久しぶり","ありがとう","名前","地元","学校","会社","休日","最近","おすすめ","人気","知ってる","面白い","好き","嫌い","絶対","一緒","次","帰る"];
 const majorityQuestions = [
   { q:"一生食べるなら？", a:"お米", b:"パン" },
   { q:"旅行するなら？", a:"海", b:"山" },
@@ -22,22 +22,74 @@ const majorityQuestions = [
   { q:"ペットにするなら？", a:"犬", b:"猫" },
   { q:"飲み会の締めは？", a:"ラーメン", b:"デザート" },
   { q:"生まれ変わるなら？", a:"また自分", b:"別の人" },
+  { q:"能力を選ぶなら？", a:"瞬間移動", b:"時間停止" },
+  { q:"一生無料なら？", a:"外食", b:"旅行" },
+  { q:"無人島に持っていくなら？", a:"ナイフ", b:"スマホ" },
+  { q:"友達になるなら？", a:"よく話す人", b:"よく聞く人" },
+  { q:"挑戦するなら？", a:"宇宙旅行", b:"深海探検" },
+  { q:"得意になれるなら？", a:"歌", b:"ダンス" },
+  { q:"朝起きたらなっていたいのは？", a:"大富豪", b:"有名人" },
+  { q:"観戦するなら？", a:"スポーツ", b:"音楽ライブ" },
+  { q:"プレゼントなら？", a:"欲しかった物", b:"サプライズ体験" },
+  { q:"移動するなら？", a:"車", b:"電車" },
+  { q:"主役になるなら？", a:"映画", b:"ゲーム" },
+  { q:"一週間なしで過ごすなら？", a:"スマホ", b:"テレビ" },
+  { q:"毎日食べるなら？", a:"カレー", b:"ラーメン" },
+  { q:"見るなら？", a:"日の出", b:"夜景" },
+  { q:"性格を選ぶなら？", a:"慎重", b:"大胆" },
+  { q:"部屋に置くなら？", a:"大きなテレビ", b:"高級ソファ" },
+  { q:"勝負するなら？", a:"知力", b:"運" },
+  { q:"休みが増えるなら？", a:"毎週3連休", b:"年1回1か月休み" },
 ];
-const bombCategories = ["食べ物","動物","地名","有名人","身近にある物","3文字以上の言葉"];
-const gestureWords = ["ゴリラ","歯みがき","寝坊","野球","ラーメン","ジェットコースター","カラオケ","猫","忍者","サーフィン","スマホ","宇宙人","料理","筋トレ","酔っぱらい","オーケストラ","温泉","釣り","花火","ゾンビ","告白","電車","美容師","相撲"];
-const matchPrompts = ["赤いものといえば？","夏の食べ物といえば？","人気の動物といえば？","コンビニで買うものといえば？","日本の観光地といえば？","丸いものといえば？","朝ごはんといえば？","強いスポーツ選手といえば？"];
-const wolfPairs = [["うどん","そば"],["犬","猫"],["海","プール"],["映画館","動画配信"],["焼肉","しゃぶしゃぶ"],["東京","大阪"],["コーヒー","紅茶"],["花火","イルミネーション"]];
-const impressionPrompts = ["一番早起きが得意そうな人","無人島でも生き残りそうな人","実は一番ロマンチストそうな人","宝くじを当てそうな人","秘密を守るのが上手そうな人","旅行の計画が上手そうな人","突然有名になりそうな人","一番やさしいと思う人"];
-const talkTopics = ["最近ハマっていること","行ってみたい旅行先","好きな食べ物","子どもの頃の思い出","理想の休日","最近笑ったこと","好きな季節","おすすめしたい作品"];
-const katakanaWords = ["スマートフォン","コンビニ","エレベーター","アイスクリーム","サブスクリプション","リモコン","ジェットコースター","ハンバーガー","パソコン","イヤホン","インターネット","カラオケ"];
+const bombCategories = ["食べ物","動物","地名","有名人","身近にある物","3文字以上の言葉","スポーツ","学校にある物","台所にある物","乗り物","職業","国名","都道府県","植物","映画やアニメのタイトル","丸い物","赤い物","夏に関係する物","冬に関係する物","コンビニにある物","旅行に持っていく物","体の部位","家電","楽器","カタカナ語"];
+const gestureWords = ["ゴリラ","歯みがき","寝坊","野球","ラーメン","ジェットコースター","カラオケ","猫","忍者","サーフィン","スマホ","宇宙人","料理","筋トレ","酔っぱらい","オーケストラ","温泉","釣り","花火","ゾンビ","告白","電車","美容師","相撲","バスケットボール","ボウリング","スキー","水泳","ゴルフ","綱引き","大掃除","洗濯","皿洗い","掃除機","ドライヤー","目覚まし時計","蚊","ペンギン","カンガルー","ヘビ","カニ","象","赤ちゃん","おばけ","魔法使い","ロボット","警察官","消防士","医者","先生","アイドル","探偵","泥棒","ヒーロー","プロポーズ","面接","遅刻","くしゃみ","しゃっくり","熱い食べ物","重い荷物","迷子","写真撮影","テレビゲーム","ダンス","ギター","太鼓","誕生日","運動会","キャンプ","肝試し"];
+const matchPrompts = ["赤いものといえば？","夏の食べ物といえば？","人気の動物といえば？","コンビニで買うものといえば？","日本の観光地といえば？","丸いものといえば？","朝ごはんといえば？","強いスポーツ選手といえば？","冬の食べ物といえば？","日本の山といえば？","海の生き物といえば？","学校の教科といえば？","おにぎりの具といえば？","ファストフードといえば？","黄色いものといえば？","春の花といえば？","運動会の種目といえば？","動物園の人気者といえば？","遊園地の乗り物といえば？","家電といえば？","文房具といえば？","日本料理といえば？","雨の日に使うものといえば？","お祭りの屋台といえば？","スポーツといえば？","楽器といえば？","都道府県といえば？","世界の国といえば？","宇宙にあるものといえば？","怖いものといえば？","かわいいものといえば？","高いものといえば？","冷たいものといえば？","無人島に持っていくものといえば？","休日にすることといえば？","誕生日プレゼントといえば？","旅行先で買うものといえば？","カラオケで最初に歌う曲の系統は？","飲み会の締めといえば？","眠れない夜にすることといえば？"];
+const wolfPairs = [["うどん","そば"],["犬","猫"],["海","プール"],["映画館","動画配信"],["焼肉","しゃぶしゃぶ"],["東京","大阪"],["コーヒー","紅茶"],["花火","イルミネーション"],["カレー","シチュー"],["ラーメン","つけ麺"],["寿司","刺身"],["餃子","春巻き"],["アイス","かき氷"],["プリン","ゼリー"],["唐揚げ","とんかつ"],["りんご","梨"],["野球","サッカー"],["テニス","バドミントン"],["スキー","スノーボード"],["キャンプ","バーベキュー"],["遊園地","動物園"],["水族館","博物館"],["温泉","サウナ"],["旅行","引っ越し"],["電車","バス"],["自転車","バイク"],["学校","会社"],["先生","上司"],["漫画","小説"],["映画","ドラマ"],["歌手","俳優"],["ピアノ","ギター"],["夏","冬"],["朝","夜"],["雨","雪"],["太陽","月"],["電話","メッセージ"],["写真","動画"],["財布","スマホ"],["誕生日","クリスマス"]];
+const impressionPrompts = ["一番早起きが得意そうな人","無人島でも生き残りそうな人","実は一番ロマンチストそうな人","宝くじを当てそうな人","秘密を守るのが上手そうな人","旅行の計画が上手そうな人","突然有名になりそうな人","一番やさしいと思う人","一番料理が上手そうな人","一番部屋がきれいそうな人","一番方向感覚がありそうな人","一番長生きしそうな人","一番運が強そうな人","一番動物に好かれそうな人","一番大食いそうな人","一番歌が上手そうな人","一番スポーツが得意そうな人","一番ゲームが強そうな人","一番字がきれいそうな人","一番記憶力がよさそうな人","一番相談しやすい人","一番プレゼント選びが上手そうな人","一番サプライズ好きそうな人","一番海外で暮らせそうな人","一番社長になりそうな人","一番先生に向いていそうな人","一番芸能人と友達になりそうな人","一番宇宙旅行に行きそうな人","一番怖い話が苦手そうな人","一番涙もろそうな人","一番笑い上戸そうな人","一番負けず嫌いそうな人","一番マイペースそうな人","一番流行に詳しそうな人","一番SNSを見ていそうな人","一番寝起きが悪そうな人","一番忘れ物が多そうな人","一番待ち合わせに早く来そうな人","一番秘密の趣味がありそうな人","一番今日を楽しんでいそうな人"];
+const talkTopics = ["最近ハマっていること","行ってみたい旅行先","好きな食べ物","子どもの頃の思い出","理想の休日","最近笑ったこと","好きな季節","おすすめしたい作品","最近買ってよかった物","行きつけのお店","得意料理","苦手な食べ物","好きなスポーツ","学生時代の部活","好きな音楽","カラオケの定番","いつか挑戦したいこと","欲しい能力","宝くじが当たったら","無人島に持っていく物","朝起きて最初にすること","寝る前にすること","最近驚いたこと","好きな動物","好きな天気","住んでみたい場所","もう一度行きたい場所","子どもの頃の夢","理想の家","休日の過ごし方","つい集めてしまう物","やめられない習慣","得意な家事","苦手な家事","最近覚えたこと","人にすすめたいアプリ","お気に入りの写真","今年やりたいこと","一番好きな行事","今日一番楽しかったこと"];
+const katakanaWords = ["スマートフォン","コンビニ","エレベーター","アイスクリーム","サブスクリプション","リモコン","ジェットコースター","ハンバーガー","パソコン","イヤホン","インターネット","カラオケ","エアコン","テレビ","ラジオ","カメラ","プリンター","キーボード","マウス","タブレット","アプリ","メール","パスワード","オンライン","ゲーム","スポーツ","サッカー","バスケットボール","テニス","ゴルフ","キャンプ","バーベキュー","ホテル","レストラン","カフェ","スーパー","デパート","タクシー","バス","トンネル","エスカレーター","マンション","ベランダ","キッチン","ソファ","テーブル","カーテン","ベッド","シャワー","トイレ","シャンプー","タオル","ドライヤー","スニーカー","サンダル","ジャケット","ネクタイ","アクセサリー","プレゼント","ケーキ","チョコレート","コーヒー","ジュース","サラダ","スープ","ステーキ","ピザ","パスタ","オムライス","フライパン"];
 const rankingQuestions = [
   {q:"日本で面積が大きい都道府県 TOP3", answers:["北海道","岩手県","福島県"]},
   {q:"世界で人口が多い国 TOP3（目安）", answers:["インド","中国","アメリカ"]},
   {q:"五十音順で早い動物 TOP3", answers:["アザラシ","アシカ","アヒル"]},
   {q:"太陽系で太陽に近い惑星 TOP3", answers:["水星","金星","地球"]},
   {q:"日本の高い山 TOP3", answers:["富士山","北岳","奥穂高岳・間ノ岳"]},
+  {q:"日本で長い川 TOP3", answers:["信濃川","利根川","石狩川"]},
+  {q:"世界で面積が大きい国 TOP3", answers:["ロシア","カナダ","中国"]},
+  {q:"太陽系で大きい惑星 TOP3", answers:["木星","土星","天王星"]},
+  {q:"五十音順で早い都道府県 TOP3", answers:["愛知県","青森県","秋田県"]},
+  {q:"標高が高い日本の湖 TOP3", answers:["中禅寺湖","榛名湖","山中湖"]},
+  {q:"日本で面積が大きい湖 TOP3", answers:["琵琶湖","霞ヶ浦","サロマ湖"]},
+  {q:"世界で面積が大きい大陸 TOP3", answers:["アジア","アフリカ","北アメリカ"]},
+  {q:"数字が小さい都道府県コード TOP3", answers:["北海道","青森県","岩手県"]},
+  {q:"太陽から遠い惑星 TOP3", answers:["海王星","天王星","土星"]},
+  {q:"日本三名園を北から順に", answers:["兼六園","偕楽園","後楽園"]},
 ];
-const drawingPrompts = ["猫","花火","自転車","富士山","ラーメン","宇宙人","誕生日ケーキ","ペンギン","ロボット","温泉","ドラゴン","おにぎり"];
+const drawingPrompts = ["猫","花火","自転車","富士山","ラーメン","宇宙人","誕生日ケーキ","ペンギン","ロボット","温泉","ドラゴン","おにぎり","犬","うさぎ","ライオン","キリン","象","パンダ","カエル","魚","タコ","恐竜","おばけ","雪だるま","サンタクロース","忍者","侍","魔法使い","王様","アイドル","サッカー選手","先生","赤ちゃん","家","学校","遊園地","無人島","宇宙船","タイムマシン","ジェットコースター","新幹線","消防車","飛行機","船","傘","時計","カメラ","スマホ","テレビ","冷蔵庫","扇風機","ギター","ピアノ","太鼓","バナナ","りんご","カレー","寿司","ハンバーガー","プリン","クリスマスツリー","運動会","キャンプ","海水浴","プロポーズ","寝坊","大掃除","世界一強そうな人","100年後の自分"];
+const quickThreePrompts = ["赤いもの","丸いもの","空を飛ぶもの","冷たいもの","熱いもの","甘いもの","コンビニにあるもの","学校にあるもの","台所にあるもの","旅行に持っていくもの","動物園にいる動物","海にいる生き物","スポーツ","楽器","乗り物","職業","都道府県","国の名前","野菜","果物","麺料理","おにぎりの具","家電","文房具","体の部位","夏にすること","冬にすること","雨の日に使うもの","誕生日にもらいたいもの","無人島に持っていくもの","カタカナ4文字の言葉","『あ』から始まる言葉","駅にあるもの","公園にあるもの","お祭りにあるもの","眠いときにすること","休日にすること","怖いもの","かわいいもの","音が出るもの"];
+const hintQuestions = [
+  {answer:"ペンギン",hints:["鳥の仲間です","寒い場所のイメージがあります","空は飛べませんが泳ぐのが得意です"]},
+  {answer:"富士山",hints:["日本にあります","世界文化遺産です","日本で一番高い山です"]},
+  {answer:"カレー",hints:["香りが強い料理です","辛さを選べます","ごはんにかけて食べます"]},
+  {answer:"スマートフォン",hints:["毎日使う人が多いです","写真も撮れます","電話やアプリが使えます"]},
+  {answer:"冷蔵庫",hints:["家電です","台所にあります","食べ物を冷やします"]},
+  {answer:"虹",hints:["自然現象です","雨上がりに見えることがあります","七色の橋のように見えます"]},
+  {answer:"パンダ",hints:["動物です","竹を食べます","白と黒の模様です"]},
+  {answer:"新幹線",hints:["乗り物です","駅に止まります","とても速い鉄道です"]},
+  {answer:"たこ焼き",hints:["丸い食べ物です","中に海の生き物が入ります","大阪名物として有名です"]},
+  {answer:"ピアノ",hints:["楽器です","両手を使います","白と黒の鍵盤があります"]},
+  {answer:"消防車",hints:["赤い乗り物です","サイレンを鳴らします","火事の現場へ向かいます"]},
+  {answer:"ひまわり",hints:["植物です","夏に咲きます","太陽のような黄色い花です"]},
+  {answer:"月",hints:["空に見えます","形が日々変わって見えます","夜を照らす天体です"]},
+  {answer:"雪だるま",hints:["冬に作ります","冷たいです","雪を丸めて重ねます"]},
+  {answer:"ドラえもん",hints:["漫画のキャラクターです","未来から来ました","青いネコ型ロボットです"]},
+  {answer:"サッカー",hints:["スポーツです","11人で行います","主に足でボールを扱います"]},
+  {answer:"図書館",hints:["静かにする場所です","無料で利用できることが多いです","本を借りられます"]},
+  {answer:"エレベーター",hints:["建物にあります","ボタンを押して使います","上下の階へ移動します"]},
+  {answer:"かき氷",hints:["夏に人気です","とても冷たいです","削った氷にシロップをかけます"]},
+  {answer:"カメレオン",hints:["動物です","長い舌があります","周囲に合わせて体の色を変えます"]},
+];
+const commonPointPairs = [["犬","警察官"],["海","空"],["カレー","ラーメン"],["スマホ","財布"],["学校","会社"],["電車","映画館"],["猫","赤ちゃん"],["雨","涙"],["夏","祭り"],["冬","冷蔵庫"],["本","旅行"],["ゲーム","スポーツ"],["コーヒー","夜"],["時計","先生"],["山","人生"],["写真","記憶"],["音楽","料理"],["コンビニ","遊園地"],["靴","車"],["誕生日","お正月"],["宇宙","海"],["傘","きのこ"],["ペン","剣"],["テレビ","窓"],["おにぎり","地球"],["花火","桜"],["冷蔵庫","図書館"],["カラオケ","お風呂"],["信号","トマト"],["電池","人間"]];
 
 function rand(max: number) { return Math.floor(Math.random() * max); }
 function rollDie() { return rand(6) + 1; }
@@ -90,6 +142,9 @@ export default function Home() {
     {screen === "noKatakana" && <NoKatakana back={goLobby} />}
     {screen === "rankingGuess" && <RankingGuess back={goLobby} />}
     {screen === "drawingSync" && <DrawingSync back={goLobby} />}
+    {screen === "threeQuick" && <ThreeQuick back={goLobby} />}
+    {screen === "threeHints" && <ThreeHints back={goLobby} />}
+    {screen === "commonPoint" && <CommonPoint back={goLobby} />}
   </main>;
 }
 
@@ -110,6 +165,9 @@ function Lobby({ open }: { open: (screen: Screen) => void }) {
     {id:"noKatakana",icon:"ア",name:"カタカナ禁止",en:"NO KATAKANA",tag:"日本語だけで説明",color:"blue",badge:"NEW"},
     {id:"rankingGuess",icon:"🥇",name:"ランキング当て",en:"TOP THREE",tag:"TOP3を順番どおりに",color:"yellow",badge:"NEW"},
     {id:"drawingSync",icon:"🎨",name:"以心伝心お絵描き",en:"DRAW TOGETHER",tag:"同じ絵を描けるかな",color:"purple",badge:"NEW"},
+    {id:"threeQuick",icon:"3",name:"3秒で3つ",en:"THREE QUICK",tag:"焦らず3つ答えよう",color:"coral",badge:"NEW"},
+    {id:"threeHints",icon:"💡",name:"3ヒントクイズ",en:"THREE HINTS",tag:"少ないヒントで当てよう",color:"yellow",badge:"NEW"},
+    {id:"commonPoint",icon:"🔗",name:"共通点さがし",en:"COMMON POINT",tag:"意外なつながりを発見",color:"mint",badge:"NEW"},
   ];
 
   return <div className="lobby">
@@ -128,7 +186,7 @@ function Lobby({ open }: { open: (screen: Screen) => void }) {
       <div className="hero-icons" aria-hidden="true"><span>🎲</span><span>🎉</span><span>💬</span></div>
     </section>
 
-    <div className="section-title"><div><b>ALL GAMES</b><h2>遊べるゲーム</h2></div><span>全15種類</span></div>
+    <div className="section-title"><div><b>ALL GAMES</b><h2>遊べるゲーム</h2></div><span>全18種類</span></div>
     <section className="game-grid">
       {games.map(game => <button className={"game-card " + game.color} key={game.id} onClick={() => open(game.id)}>
         <span className="card-badge">{game.badge}</span>
@@ -137,7 +195,7 @@ function Lobby({ open }: { open: (screen: Screen) => void }) {
         <span className="arrow">›</span>
       </button>)}
     </section>
-    <footer><span>ルールは各ゲーム内で確認できます</span><b>v1.3.0</b></footer>
+    <footer><span>ルールは各ゲーム内で確認できます</span><b>v1.4.0</b></footer>
   </div>;
 }
 
@@ -531,4 +589,23 @@ function DrawingSync({ back }: { back: () => void }) {
   useEffect(()=>{if(phase!=="draw")return;const t=window.setInterval(()=>setSeconds(s=>{if(s<=1){window.clearInterval(t);setPhase("compare");return 0}return s-1}),1000);return()=>window.clearInterval(t)},[phase]);
   const next=()=>{let n=drawingPrompts[rand(drawingPrompts.length)];while(n===prompt)n=drawingPrompts[rand(drawingPrompts.length)];setPrompt(n);setSeconds(30);setPhase("ready")};
   return <div className="game-page"><GameHeader title="以心伝心お絵描き" subtitle="DRAW TOGETHER" icon="🎨" onBack={back}/><section className="play-card center-card"><p className="kicker">全員同時に描こう</p><strong className="party-prompt">{prompt}</strong>{phase==="ready"&&<button className="primary" onClick={()=>setPhase("draw")}>30秒スタート</button>}{phase==="draw"&&<><div className="timing-result">残り <b>{seconds}</b> 秒</div><button className="primary" onClick={()=>setPhase("compare")}>描けた！</button></>}{phase==="compare"&&<><h2>せーので絵を見せよう！</h2><button className="primary" onClick={next}>次のお題</button></>}<p className="howto">紙やスマホのメモに描き、構図やポーズが一番似ていた2人が勝ち！</p></section></div>;
+}
+
+function ThreeQuick({ back }: { back: () => void }) {
+  const [prompt,setPrompt]=useState(()=>quickThreePrompts[rand(quickThreePrompts.length)]); const [phase,setPhase]=useState<"ready"|"run"|"done">("ready"); const [seconds,setSeconds]=useState(3);
+  useEffect(()=>{if(phase!=="run")return;const t=window.setInterval(()=>setSeconds(s=>{if(s<=1){window.clearInterval(t);setPhase("done");return 0}return s-1}),1000);return()=>window.clearInterval(t)},[phase]);
+  const next=()=>{let n=quickThreePrompts[rand(quickThreePrompts.length)];while(n===prompt)n=quickThreePrompts[rand(quickThreePrompts.length)];setPrompt(n);setSeconds(3);setPhase("ready")};
+  return <div className="game-page"><GameHeader title="3秒で3つ" subtitle="THREE QUICK" icon="3" onBack={back}/><section className="play-card center-card"><p className="kicker">3つ答えられるかな？</p><strong className="party-prompt">{prompt}</strong>{phase==="ready"&&<button className="primary" onClick={()=>setPhase("run")}>3秒スタート</button>}{phase==="run"&&<div className="timing-result">残り <b>{seconds}</b> 秒</div>}{phase==="done"&&<><h2>答えられた？</h2><button className="primary" onClick={next}>次のお題</button></>}<p className="howto">お題に当てはまるものを3秒以内に3つ答えます。言えたら成功！</p></section></div>;
+}
+
+function ThreeHints({ back }: { back: () => void }) {
+  const [item,setItem]=useState(()=>hintQuestions[rand(hintQuestions.length)]); const [hintCount,setHintCount]=useState(1); const [answer,setAnswer]=useState(false);
+  const next=()=>{let n=hintQuestions[rand(hintQuestions.length)];while(n.answer===item.answer)n=hintQuestions[rand(hintQuestions.length)];setItem(n);setHintCount(1);setAnswer(false)};
+  return <div className="game-page"><GameHeader title="3ヒントクイズ" subtitle="THREE HINTS" icon="💡" onBack={back}/><section className="play-card center-card"><p className="kicker">少ないヒントほど高得点</p><div className="answer-list">{item.hints.slice(0,hintCount).map((h,i)=><div key={h}><span>ヒント {i+1}</span><b>{h}</b></div>)}</div>{answer?<><strong className="party-prompt">答え：{item.answer}</strong><button className="primary" onClick={next}>次の問題</button></>:<><button className="primary" onClick={()=>hintCount<3?setHintCount(n=>n+1):setAnswer(true)}>{hintCount<3?"次のヒント":"答えを見る"}</button><button className="secondary" onClick={()=>setAnswer(true)}>わかった！答えを見る</button></>}<p className="howto">1つ目で正解なら3点、2つ目なら2点、3つ目なら1点です。</p></section></div>;
+}
+
+function CommonPoint({ back }: { back: () => void }) {
+  const [pair,setPair]=useState(()=>commonPointPairs[rand(commonPointPairs.length)]); const [shown,setShown]=useState(false);
+  const next=()=>{let n=commonPointPairs[rand(commonPointPairs.length)];while(n[0]===pair[0]&&n[1]===pair[1])n=commonPointPairs[rand(commonPointPairs.length)];setPair(n);setShown(false)};
+  return <div className="game-page"><GameHeader title="共通点さがし" subtitle="COMMON POINT" icon="🔗" onBack={back}/><section className="play-card center-card"><p className="kicker">2つをつなぐ共通点は？</p><strong className="party-prompt">{pair[0]} × {pair[1]}</strong>{!shown?<button className="primary" onClick={()=>setShown(true)}>せーので発表</button>:<><h2>一番おもしろい共通点を決めよう！</h2><button className="primary" onClick={next}>次のお題</button></>}<p className="howto">全員で共通点を考え、同時に発表します。正解はひとつではありません。</p></section></div>;
 }
