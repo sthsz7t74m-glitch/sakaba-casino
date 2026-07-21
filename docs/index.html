@@ -4,30 +4,12 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <meta name="theme-color" content="#ff667d" />
-    <meta name="description" content="フォーダイスちんちろ、通常ちんちろ、どすこい、NGワードなど7種類を1台のスマホで遊べる宴会ゲーム集" />
+    <meta name="description" content="フォーダイスちんちろ、どすこい、NGワードなど6種類を1台のスマホで遊べる宴会ゲーム集" />
     <title>宴会ゲームBOX｜みんなで遊べるゲーム集</title>
-    <script type="module" crossorigin src="/sakaba-casino/assets/index-DL4TVxyg.js"></script>
-    <link rel="stylesheet" crossorigin href="/sakaba-casino/assets/index-DsJz0PQx.css">
+    <script type="module" crossorigin src="/sakaba-casino/assets/index-B54KU5YT.js"></script>
+    <link rel="stylesheet" crossorigin href="/sakaba-casino/assets/index-CEDxX9eN.css">
   </head>
   <body>
     <div id="root"></div>
-    <script>
-      const addClassicChinchiro = () => {
-        const grid = document.querySelector('.game-grid');
-        if (!grid || document.querySelector('[data-classic-chinchiro]')) return;
-        const card = document.createElement('button');
-        card.className = 'game-card mint';
-        card.dataset.classicChinchiro = 'true';
-        card.innerHTML = '<span class="card-badge">定番</span><span class="game-icon">⚂</span><span class="game-copy"><small>CLASSIC CHINCHIRO</small><strong>ちんちろ</strong><em>3個のサイコロで勝負</em></span><span class="arrow">›</span>';
-        card.onclick = () => location.href = './games/classic-chinchiro/';
-        grid.insertBefore(card, grid.children[1] || null);
-        const count = document.querySelector('.section-title > span');
-        if (count) count.textContent = '全7種類';
-        const version = document.querySelector('footer b');
-        if (version) version.textContent = 'v1.1.0';
-      };
-      new MutationObserver(addClassicChinchiro).observe(document.getElementById('root'), {childList:true,subtree:true});
-      addClassicChinchiro();
-    </script>
   </body>
 </html>
