@@ -166,6 +166,8 @@ select{background:#fff;border:2px solid #29324d20;border-radius:10px;padding:7px
 .gesture-actions button{border:2px solid #fff;border-radius:17px;padding:16px;font-weight:1000;box-shadow:0 6px 0 #29324d22}
 .gesture-actions button:first-child{background:#e8e9f5;color:#5c657e}.gesture-actions button:last-child{background:#55cdb1;color:#fff}
 .final-score{display:flex;flex-direction:column;margin:10px 0 24px}.final-score b{font-size:80px;color:#e94f75;line-height:1}.final-score span{color:var(--muted)}
+.party-prompt{display:grid;place-items:center;min-height:190px;margin:22px 0;padding:22px;border:4px solid #fff;border-radius:27px;background:linear-gradient(145deg,#fff0a2,#ffd27b);box-shadow:0 9px 0 #e5a342;color:#593f25;font-size:34px;font-weight:1000;line-height:1.4}
+.timing-result{margin:4px 0 22px;padding:14px;border-radius:16px;background:#f1edff;color:#6255bd;font-size:18px;font-weight:1000}.timing-result b{font-size:28px;color:#ef5075}
 
 .dosukoi-settings{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin:5px 0 12px}
 .count-setting{display:grid;grid-template-columns:1fr 34px 35px 34px;align-items:center;gap:4px;background:#fff;color:var(--ink);border:2px solid #5068d925;box-shadow:0 5px 0 #5068d91f;border-radius:15px;padding:8px 9px}
