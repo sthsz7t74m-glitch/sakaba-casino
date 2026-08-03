@@ -3,42 +3,59 @@
 import { useEffect, useRef, useState } from "react";
 
 const LIMIT_SECONDS = 120;
+const STORAGE_KEY = "dosukoi-time-limit";
+
+type SavedTimer = {
+  remaining: number;
+  running: boolean;
+  deadline: number | null;
+  expired: boolean;
+};
+
+function readSavedTimer(): SavedTimer {
+  const fallback: SavedTimer = { remaining: LIMIT_SECONDS, running: false, deadline: null, expired: false };
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return fallback;
+    const saved = JSON.parse(raw) as Partial<SavedTimer>;
+    if (saved.running && typeof saved.deadline === "number") {
+      const remaining = Math.max(0, Math.ceil((saved.deadline - Date.now()) / 1000));
+      return {
+        remaining,
+        running: remaining > 0,
+        deadline: remaining > 0 ? saved.deadline : null,
+        expired: remaining === 0,
+      };
+    }
+    const remaining = Math.max(0, Math.min(LIMIT_SECONDS, Number(saved.remaining) || 0));
+    return {
+      remaining,
+      running: false,
+      deadline: null,
+      expired: remaining === 0 || Boolean(saved.expired),
+    };
+  } catch {
+    return fallback;
+  }
+}
 
 export default function GlobalTimer() {
+  const [visible, setVisible] = useState(false);
   const [remaining, setRemaining] = useState(LIMIT_SECONDS);
   const [running, setRunning] = useState(false);
+  const [deadline, setDeadline] = useState<number | null>(null);
   const [expired, setExpired] = useState(false);
+  const [ready, setReady] = useState(false);
   const audioContextRef = useRef<AudioContext | null>(null);
-
-  useEffect(() => {
-    if (!running) return;
-
-    const timer = window.setInterval(() => {
-      setRemaining(current => {
-        if (current <= 1) {
-          window.clearInterval(timer);
-          setRunning(false);
-          setExpired(true);
-          playAlarm();
-          return 0;
-        }
-        return current - 1;
-      });
-    }, 1000);
-
-    return () => window.clearInterval(timer);
-  }, [running]);
 
   const playAlarm = () => {
     try {
       const AudioCtor = window.AudioContext ||
         (window as Window & { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
       if (!AudioCtor) return;
-
       const audio = audioContextRef.current ?? new AudioCtor();
       audioContextRef.current = audio;
       const now = audio.currentTime;
-
       [0, 0.22, 0.44].forEach(offset => {
         const oscillator = audio.createOscillator();
         const gain = audio.createGain();
@@ -51,43 +68,104 @@ export default function GlobalTimer() {
         oscillator.start(now + offset);
         oscillator.stop(now + offset + 0.18);
       });
-    } catch {
-      // Sound is optional; the visual alert still works.
-    }
+    } catch {}
   };
+
+  const startFresh = () => {
+    const nextDeadline = Date.now() + LIMIT_SECONDS * 1000;
+    setRemaining(LIMIT_SECONDS);
+    setDeadline(nextDeadline);
+    setExpired(false);
+    setRunning(true);
+  };
+
+  useEffect(() => {
+    const saved = readSavedTimer();
+    setRemaining(saved.remaining);
+    setRunning(saved.running);
+    setDeadline(saved.deadline);
+    setExpired(saved.expired);
+    setReady(true);
+  }, []);
+
+  useEffect(() => {
+    const updateVisibility = () => setVisible(Boolean(document.querySelector(".dosukoi-page")));
+    updateVisibility();
+    const observer = new MutationObserver(updateVisibility);
+    observer.observe(document.body, { childList: true, subtree: true });
+
+    const onClick = (event: MouseEvent) => {
+      const target = event.target as HTMLElement | null;
+      if (target?.closest(".dosukoi-page .dosukoi-next")) startFresh();
+    };
+    document.addEventListener("click", onClick);
+    return () => {
+      observer.disconnect();
+      document.removeEventListener("click", onClick);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!running || deadline === null) return;
+    const tick = () => {
+      const next = Math.max(0, Math.ceil((deadline - Date.now()) / 1000));
+      setRemaining(next);
+      if (next === 0) {
+        setRunning(false);
+        setDeadline(null);
+        setExpired(true);
+        playAlarm();
+      }
+    };
+    tick();
+    const timer = window.setInterval(tick, 250);
+    return () => window.clearInterval(timer);
+  }, [running, deadline]);
+
+  useEffect(() => {
+    if (!ready) return;
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({ remaining, running, deadline, expired }));
+  }, [remaining, running, deadline, expired, ready]);
 
   const toggle = () => {
     if (remaining === 0) {
-      setRemaining(LIMIT_SECONDS);
-      setExpired(false);
-      setRunning(true);
+      startFresh();
       return;
     }
-    setExpired(false);
-    setRunning(current => !current);
+    if (running) {
+      setRunning(false);
+      setDeadline(null);
+    } else {
+      setDeadline(Date.now() + remaining * 1000);
+      setExpired(false);
+      setRunning(true);
+    }
   };
 
   const reset = () => {
     setRunning(false);
+    setDeadline(null);
     setRemaining(LIMIT_SECONDS);
     setExpired(false);
   };
+
+  if (!visible) return null;
 
   const minutes = Math.floor(remaining / 60);
   const seconds = String(remaining % 60).padStart(2, "0");
 
   return (
-    <aside className={`global-timer ${running ? "is-running" : ""} ${expired ? "is-expired" : ""}`} aria-live="polite">
-      <div className="global-timer-display">
-        <small>{expired ? "時間切れ！" : "制限時間"}</small>
+    <aside className={`dosukoi-time-limit ${running ? "is-running" : ""} ${expired ? "is-expired" : ""}`} aria-live="polite">
+      <div className="dosukoi-time-display">
+        <small>{expired ? "時間切れ！" : "時間制限"}</small>
         <strong>{minutes}:{seconds}</strong>
       </div>
-      <div className="global-timer-actions">
+      <div className="dosukoi-time-actions">
         <button type="button" onClick={toggle}>{running ? "一時停止" : remaining === 0 ? "もう一度" : "スタート"}</button>
-        <button type="button" onClick={reset} aria-label="タイマーを2分に戻す">↻</button>
+        <button type="button" onClick={reset} aria-label="時間制限を2分に戻す">↻</button>
       </div>
       <style>{`
-        .global-timer {
+        .dosukoi-time-limit {
           position: fixed;
           z-index: 1000;
           top: max(10px, env(safe-area-inset-top));
@@ -105,79 +183,23 @@ export default function GlobalTimer() {
           backdrop-filter: blur(8px);
           -webkit-backdrop-filter: blur(8px);
         }
-        .global-timer-display {
-          min-width: 61px;
-          text-align: center;
-          line-height: 1;
-        }
-        .global-timer-display small {
-          display: block;
-          margin-bottom: 3px;
-          font-size: 10px;
-          font-weight: 800;
-          white-space: nowrap;
-        }
-        .global-timer-display strong {
-          display: block;
-          font-size: 25px;
-          font-variant-numeric: tabular-nums;
-          letter-spacing: .02em;
-        }
-        .global-timer-actions {
-          display: flex;
-          gap: 4px;
-        }
-        .global-timer-actions button {
-          min-height: 34px;
-          padding: 0 9px;
-          border: 0;
-          border-radius: 11px;
-          color: white;
-          background: #ef5573;
-          font: inherit;
-          font-size: 11px;
-          font-weight: 900;
-          cursor: pointer;
-          touch-action: manipulation;
-        }
-        .global-timer-actions button:last-child {
-          width: 34px;
-          padding: 0;
-          font-size: 20px;
-          background: #735b66;
-        }
-        .global-timer.is-running {
-          border-color: #ffd166;
-        }
-        .global-timer.is-expired {
-          color: white;
-          background: #df304f;
-          animation: timer-alert .55s ease-in-out infinite alternate;
-        }
-        .global-timer.is-expired .global-timer-actions button {
-          color: #df304f;
-          background: white;
-        }
-        .global-timer.is-expired .global-timer-actions button:last-child {
-          color: white;
-          background: #735b66;
-        }
-        @keyframes timer-alert {
-          from { transform: scale(1); }
-          to { transform: scale(1.035); }
-        }
-        @media (max-width: 520px) {
-          .global-timer {
-            top: max(6px, env(safe-area-inset-top));
-            right: max(6px, env(safe-area-inset-right));
-            gap: 5px;
-            padding: 5px 6px 5px 9px;
-            border-radius: 15px;
-          }
-          .global-timer-display { min-width: 54px; }
-          .global-timer-display strong { font-size: 21px; }
-          .global-timer-actions button { min-height: 30px; padding: 0 7px; font-size: 10px; }
-          .global-timer-actions button:last-child { width: 30px; font-size: 18px; }
+        .dosukoi-time-display { min-width: 61px; text-align: center; line-height: 1; }
+        .dosukoi-time-display small { display:block; margin-bottom:3px; font-size:10px; font-weight:800; white-space:nowrap; }
+        .dosukoi-time-display strong { display:block; font-size:25px; font-variant-numeric:tabular-nums; letter-spacing:.02em; }
+        .dosukoi-time-actions { display:flex; gap:4px; }
+        .dosukoi-time-actions button { min-height:34px; padding:0 9px; border:0; border-radius:11px; color:white; background:#ef5573; font:inherit; font-size:11px; font-weight:900; cursor:pointer; touch-action:manipulation; }
+        .dosukoi-time-actions button:last-child { width:34px; padding:0; font-size:20px; background:#735b66; }
+        .dosukoi-time-limit.is-running { border-color:#ffd166; }
+        .dosukoi-time-limit.is-expired { color:white; background:#df304f; animation:dosukoi-timer-alert .55s ease-in-out infinite alternate; }
+        .dosukoi-time-limit.is-expired .dosukoi-time-actions button { color:#df304f; background:white; }
+        .dosukoi-time-limit.is-expired .dosukoi-time-actions button:last-child { color:white; background:#735b66; }
+        @keyframes dosukoi-timer-alert { from { transform:scale(1); } to { transform:scale(1.035); } }
+        @media (max-width:520px) {
+          .dosukoi-time-limit { top:max(6px, env(safe-area-inset-top)); right:max(6px, env(safe-area-inset-right)); gap:5px; padding:5px 6px 5px 9px; border-radius:15px; }
+          .dosukoi-time-display { min-width:54px; }
+          .dosukoi-time-display strong { font-size:21px; }
+          .dosukoi-time-actions button { min-height:30px; padding:0 7px; font-size:10px; }
+          .dosukoi-time-actions button:last-child { width:30px; font-size:18px; }
         }
       `}</style>
     </aside>
