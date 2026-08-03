@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 
 const LIMIT_SECONDS = 120;
 const STORAGE_KEY = "dosukoi-time-limit";
@@ -40,7 +41,7 @@ function readSavedTimer(): SavedTimer {
 }
 
 export default function GlobalTimer() {
-  const [visible, setVisible] = useState(false);
+  const [mount, setMount] = useState<HTMLElement | null>(null);
   const [remaining, setRemaining] = useState(LIMIT_SECONDS);
   const [running, setRunning] = useState(false);
   const [deadline, setDeadline] = useState<number | null>(null);
@@ -89,9 +90,23 @@ export default function GlobalTimer() {
   }, []);
 
   useEffect(() => {
-    const updateVisibility = () => setVisible(Boolean(document.querySelector(".dosukoi-page")));
-    updateVisibility();
-    const observer = new MutationObserver(updateVisibility);
+    const updateMount = () => {
+      const button = document.querySelector<HTMLElement>(".dosukoi-page .dosukoi-next");
+      if (!button) {
+        setMount(null);
+        return;
+      }
+      let host = document.querySelector<HTMLElement>(".dosukoi-timer-mount");
+      if (!host) {
+        host = document.createElement("div");
+        host.className = "dosukoi-timer-mount";
+        button.parentElement?.insertBefore(host, button);
+      }
+      setMount(host);
+    };
+
+    updateMount();
+    const observer = new MutationObserver(updateMount);
     observer.observe(document.body, { childList: true, subtree: true });
 
     const onClick = (event: MouseEvent) => {
@@ -149,12 +164,12 @@ export default function GlobalTimer() {
     setExpired(false);
   };
 
-  if (!visible) return null;
+  if (!mount) return null;
 
   const minutes = Math.floor(remaining / 60);
   const seconds = String(remaining % 60).padStart(2, "0");
 
-  return (
+  return createPortal(
     <aside className={`dosukoi-time-limit ${running ? "is-running" : ""} ${expired ? "is-expired" : ""}`} aria-live="polite">
       <div className="dosukoi-time-display">
         <small>{expired ? "時間切れ！" : "時間制限"}</small>
@@ -165,43 +180,42 @@ export default function GlobalTimer() {
         <button type="button" onClick={reset} aria-label="時間制限を2分に戻す">↻</button>
       </div>
       <style>{`
+        .dosukoi-timer-mount { width:100%; margin:12px 0 10px; }
         .dosukoi-time-limit {
-          position: fixed;
-          z-index: 1000;
-          top: max(10px, env(safe-area-inset-top));
-          right: max(10px, env(safe-area-inset-right));
-          display: flex;
-          align-items: center;
-          gap: 8px;
-          padding: 7px 8px 7px 12px;
-          border: 2px solid rgba(255,255,255,.92);
-          border-radius: 18px;
-          color: #3b2630;
-          background: rgba(255,255,255,.96);
-          box-shadow: 0 6px 18px rgba(72,28,43,.2);
-          font-family: inherit;
-          backdrop-filter: blur(8px);
-          -webkit-backdrop-filter: blur(8px);
+          width:100%;
+          display:flex;
+          align-items:center;
+          justify-content:center;
+          gap:14px;
+          padding:11px 14px;
+          border:2px solid rgba(255,255,255,.92);
+          border-radius:18px;
+          color:#3b2630;
+          background:rgba(255,255,255,.96);
+          box-shadow:0 6px 18px rgba(72,28,43,.16);
+          font-family:inherit;
         }
-        .dosukoi-time-display { min-width: 61px; text-align: center; line-height: 1; }
-        .dosukoi-time-display small { display:block; margin-bottom:3px; font-size:10px; font-weight:800; white-space:nowrap; }
-        .dosukoi-time-display strong { display:block; font-size:25px; font-variant-numeric:tabular-nums; letter-spacing:.02em; }
-        .dosukoi-time-actions { display:flex; gap:4px; }
-        .dosukoi-time-actions button { min-height:34px; padding:0 9px; border:0; border-radius:11px; color:white; background:#ef5573; font:inherit; font-size:11px; font-weight:900; cursor:pointer; touch-action:manipulation; }
-        .dosukoi-time-actions button:last-child { width:34px; padding:0; font-size:20px; background:#735b66; }
+        .dosukoi-time-display { min-width:78px; text-align:center; line-height:1; }
+        .dosukoi-time-display small { display:block; margin-bottom:4px; font-size:11px; font-weight:900; white-space:nowrap; }
+        .dosukoi-time-display strong { display:block; font-size:30px; font-variant-numeric:tabular-nums; letter-spacing:.02em; }
+        .dosukoi-time-actions { display:flex; gap:6px; }
+        .dosukoi-time-actions button { min-height:38px; padding:0 12px; border:0; border-radius:12px; color:white; background:#ef5573; font:inherit; font-size:12px; font-weight:900; cursor:pointer; touch-action:manipulation; }
+        .dosukoi-time-actions button:last-child { width:38px; padding:0; font-size:21px; background:#735b66; }
         .dosukoi-time-limit.is-running { border-color:#ffd166; }
         .dosukoi-time-limit.is-expired { color:white; background:#df304f; animation:dosukoi-timer-alert .55s ease-in-out infinite alternate; }
         .dosukoi-time-limit.is-expired .dosukoi-time-actions button { color:#df304f; background:white; }
         .dosukoi-time-limit.is-expired .dosukoi-time-actions button:last-child { color:white; background:#735b66; }
-        @keyframes dosukoi-timer-alert { from { transform:scale(1); } to { transform:scale(1.035); } }
+        @keyframes dosukoi-timer-alert { from { transform:scale(1); } to { transform:scale(1.02); } }
         @media (max-width:520px) {
-          .dosukoi-time-limit { top:max(6px, env(safe-area-inset-top)); right:max(6px, env(safe-area-inset-right)); gap:5px; padding:5px 6px 5px 9px; border-radius:15px; }
-          .dosukoi-time-display { min-width:54px; }
-          .dosukoi-time-display strong { font-size:21px; }
-          .dosukoi-time-actions button { min-height:30px; padding:0 7px; font-size:10px; }
-          .dosukoi-time-actions button:last-child { width:30px; font-size:18px; }
+          .dosukoi-timer-mount { margin:10px 0 8px; }
+          .dosukoi-time-limit { gap:9px; padding:9px 10px; border-radius:15px; }
+          .dosukoi-time-display { min-width:68px; }
+          .dosukoi-time-display strong { font-size:26px; }
+          .dosukoi-time-actions button { min-height:34px; padding:0 9px; font-size:11px; }
+          .dosukoi-time-actions button:last-child { width:34px; font-size:19px; }
         }
       `}</style>
-    </aside>
+    </aside>,
+    mount,
   );
 }
