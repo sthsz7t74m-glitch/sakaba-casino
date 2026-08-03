@@ -8,6 +8,7 @@ const root = document.getElementById("root");
 
 if (!root) throw new Error("App root was not found");
 
+const APP_VERSION = "v1.3.0";
 const SCREEN_KEY = "sakaba-current-screen";
 const SCREEN_SLUGS = [
   "chinchiro",
@@ -40,6 +41,35 @@ function restoreScreenFromUrl() {
   const index = SCREEN_SLUGS.indexOf(slug as (typeof SCREEN_SLUGS)[number]);
   if (index < 0) return;
   getGameCards()[index]?.click();
+}
+
+function VersionBadge() {
+  return (
+    <>
+      <div className="app-version" aria-label={`アプリバージョン ${APP_VERSION}`}>{APP_VERSION}</div>
+      <style>{`
+        .app-version {
+          position: fixed;
+          z-index: 1200;
+          right: max(10px, env(safe-area-inset-right));
+          bottom: max(10px, env(safe-area-inset-bottom));
+          padding: 5px 9px;
+          border: 1px solid rgba(41, 50, 77, .12);
+          border-radius: 999px;
+          color: #6f7893;
+          background: rgba(255, 255, 255, .9);
+          box-shadow: 0 3px 10px rgba(41, 50, 77, .1);
+          font-size: 10px;
+          font-weight: 900;
+          line-height: 1;
+          letter-spacing: .04em;
+          pointer-events: none;
+          backdrop-filter: blur(8px);
+          -webkit-backdrop-filter: blur(8px);
+        }
+      `}</style>
+    </>
+  );
 }
 
 function App() {
@@ -87,6 +117,7 @@ function App() {
     <>
       <Home />
       <GlobalTimer />
+      <VersionBadge />
     </>
   );
 }
