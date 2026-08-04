@@ -1,5 +1,6 @@
 import { extraAnswerWordTuples } from "./word-data-extra";
 import { bulkAnswerWordTuples } from "./word-data-bulk";
+import { popCultureWordTuples } from "./word-data-popculture";
 import { generatedWords4 } from "./word-data-4";
 import { generatedWords5 } from "./word-data-5";
 import { generatedWords6 } from "./word-data-6";
@@ -18,7 +19,7 @@ const generated = [...generatedWords4, ...generatedWords5, ...generatedWords6, .
 
 export const answerWords: AnswerWord[] = Array.from(
   new Map(
-    [...extraAnswerWordTuples, ...bulkAnswerWordTuples, ...generated]
+    [...extraAnswerWordTuples, ...bulkAnswerWordTuples, ...popCultureWordTuples, ...generated]
       .map(toWord)
       .map(entry => [`${entry.surface}\u0000${entry.reading}`, entry]),
   ).values(),
@@ -27,7 +28,7 @@ export const answerWords: AnswerWord[] = Array.from(
 const dictionary = new Map<number, Map<string, AnswerWord[]>>();
 for (const entry of answerWords) {
   const length = Array.from(entry.reading).length;
-  if (length < 4 || length > 8) continue;
+  if (length < 4 || length > 20) continue;
   const head = Array.from(entry.reading)[0];
   const byKana = dictionary.get(length) ?? new Map<string, AnswerWord[]>();
   const bucket = byKana.get(head) ?? [];
@@ -46,6 +47,7 @@ function shuffle<T>(items: T[]): T[] {
 }
 
 export function findAnswerWords(kana: string, length: number): AnswerWord[] {
+  if (length < 4 || length > 20) return [];
   const bucket = dictionary.get(length)?.get(kana) ?? [];
   const unique = Array.from(new Map(bucket.map(entry => [`${entry.surface}\u0000${entry.reading}`, entry])).values());
   const ordinary = shuffle(unique.filter(entry => !entry.proper));
