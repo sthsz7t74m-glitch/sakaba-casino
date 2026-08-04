@@ -3,6 +3,7 @@
 import { useEffect } from "react";
 import { ensureFormControls } from "./components/FormControls";
 import { ensureGameHeaderVersion } from "./components/GameHeaderVersion";
+import { ensureModalDialogs } from "./components/ModalDialog";
 import { ensurePartyTip } from "./components/PartyTip";
 import { ensurePrimaryActions } from "./components/PrimaryAction";
 import { ensureSecondaryActions } from "./components/SecondaryAction";
@@ -35,6 +36,7 @@ function enhancePage(page: HTMLElement): void {
   ensurePrimaryActions(page);
   ensureSecondaryActions(page);
   ensureFormControls(page);
+  ensureModalDialogs(page);
   page.dataset.partyEnhanced = APP_VERSION;
 }
 
@@ -45,8 +47,8 @@ export default function PartyGameEnhancer() {
     const enhance = () => {
       removeLegacyVersionBadges();
       const page = findGamePage();
-      if (!page || page === currentPage) return;
-      currentPage = page;
+      if (!page) return;
+      if (page !== currentPage) currentPage = page;
       enhancePage(page);
     };
 
