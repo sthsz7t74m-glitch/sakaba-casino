@@ -1,10 +1,5 @@
 #!/usr/bin/env python3
-"""Generate a balanced TypeScript dictionary from EDRDG EDICT2.
-
-The whole source is scanned first, then entries are selected evenly across
-(initial kana, reading length) buckets. This prevents later kana such as ら/り/る
-from disappearing because of a global early cut-off.
-"""
+"""Generate a mobile-friendly balanced TypeScript dictionary from EDRDG EDICT2."""
 from __future__ import annotations
 
 import gzip
@@ -20,8 +15,9 @@ SOURCE_URL = "https://ftp.edrdg.org/pub/Nihongo/edict2.gz"
 OUTPUT = Path("app/word-data-jmdict.generated.ts")
 MIN_LENGTH = 3
 MAX_LENGTH = 20
-MAX_ENTRIES = 120000
-MIN_EXPECTED_ENTRIES = 50000
+MAX_ENTRIES = 30000
+MIN_PARSED_ENTRIES = 50000
+MIN_GENERATED_ENTRIES = 25000
 
 KATAKANA_START = ord("ァ")
 KATAKANA_END = ord("ヶ")
@@ -32,10 +28,7 @@ def to_hiragana(text: str) -> str:
     chars: list[str] = []
     for char in text:
         code = ord(char)
-        if KATAKANA_START <= code <= KATAKANA_END:
-            chars.append(chr(code + HIRAGANA_OFFSET))
-        else:
-            chars.append(char)
+        chars.append(chr(code + HIRAGANA_OFFSET) if KATAKANA_START <= code <= KATAKANA_END else char)
     return "".join(chars)
 
 
@@ -48,8 +41,6 @@ def valid_reading(reading: str) -> bool:
 
 
 def parse_line(line: str) -> tuple[str, str] | None:
-    # EDICT2 appends an /EntL.../ identifier to normal dictionary entries.
-    # Do not filter on EntL: doing so discards the entire dictionary.
     if not line or line.startswith("　") or line.startswith("EDICT2"):
         return None
 
@@ -87,24 +78,10 @@ def choose_balanced(entries: set[tuple[str, str]]) -> list[tuple[str, str]]:
     return sorted(selected, key=lambda item: (len(item[1]), item[1], item[0]))
 
 
-def main() -> int:
-    request = urllib.request.Request(SOURCE_URL, headers={"User-Agent": "sakaba-casino-dictionary-builder/3.0"})
-    with urllib.request.urlopen(request, timeout=120) as response:
-        compressed = response.read()
+def validate(rows: list[tuple[str, str]]) -> dict[tuple[str, int], int]:
+    if len(rows) < MIN_GENERATED_ENTRIES:
+        raise RuntimeError(f"Generated only {len(rows)} entries; expected at least {MIN_GENERATED_ENTRIES}")
 
-    entries: set[tuple[str, str]] = set()
-    with gzip.GzipFile(fileobj=io.BytesIO(compressed)) as archive:
-        for raw in archive:
-            parsed = parse_line(raw.decode("euc-jp", errors="ignore").strip())
-            if parsed is not None:
-                entries.add(parsed)
-
-    if len(entries) < MIN_EXPECTED_ENTRIES:
-        raise RuntimeError(
-            f"Dictionary parsing produced only {len(entries)} entries; expected at least {MIN_EXPECTED_ENTRIES}"
-        )
-
-    rows = choose_balanced(entries)
     counts: dict[tuple[str, int], int] = defaultdict(int)
     for _, reading in rows:
         counts[(reading[0], len(reading))] += 1
@@ -123,6 +100,26 @@ def main() -> int:
     ]
     if insufficient:
         raise RuntimeError(f"Dictionary bucket validation failed: {', '.join(insufficient)}")
+    return counts
+
+
+def main() -> int:
+    request = urllib.request.Request(SOURCE_URL, headers={"User-Agent": "sakaba-casino-dictionary-builder/4.0"})
+    with urllib.request.urlopen(request, timeout=120) as response:
+        compressed = response.read()
+
+    entries: set[tuple[str, str]] = set()
+    with gzip.GzipFile(fileobj=io.BytesIO(compressed)) as archive:
+        for raw in archive:
+            parsed = parse_line(raw.decode("euc-jp", errors="ignore").strip())
+            if parsed is not None:
+                entries.add(parsed)
+
+    if len(entries) < MIN_PARSED_ENTRIES:
+        raise RuntimeError(f"Parsed only {len(entries)} entries; expected at least {MIN_PARSED_ENTRIES}")
+
+    rows = choose_balanced(entries)
+    counts = validate(rows)
 
     OUTPUT.parent.mkdir(parents=True, exist_ok=True)
     with OUTPUT.open("w", encoding="utf-8") as file:
@@ -133,8 +130,8 @@ def main() -> int:
             file.write(f"  [{json.dumps(surface, ensure_ascii=False)},{json.dumps(reading, ensure_ascii=False)}],\n")
         file.write("];\n")
 
-    print(f"Scanned {len(entries)} unique entries; generated {len(rows)} balanced entries")
-    for kana, length in required_minimums:
+    print(f"Parsed {len(entries)} unique entries; generated {len(rows)} balanced mobile entries")
+    for kana, length in (("ら", 4), ("ば", 3), ("ば", 4), ("あ", 4), ("か", 5)):
         print(f"bucket {kana}/{length}={counts[(kana, length)]}")
     return 0
 
