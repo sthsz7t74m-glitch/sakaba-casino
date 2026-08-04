@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import "./dosukoi-enhancements.css";
 import DosukoiExamplesEnhancer from "./DosukoiExamplesEnhancer";
 
 export const metadata: Metadata = {
