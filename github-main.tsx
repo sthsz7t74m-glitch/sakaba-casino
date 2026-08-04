@@ -3,6 +3,7 @@ import { createRoot } from "react-dom/client";
 import Home from "./app/page";
 import DosukoiExamplesEnhancer from "./app/DosukoiExamplesEnhancer";
 import PartyGameEnhancer from "./app/PartyGameEnhancer";
+import { APP_VERSION } from "./app/version";
 import "./app/globals.css";
 import "./app/dosukoi-enhancements.css";
 import "./app/party-game-enhancements.css";
@@ -10,7 +11,6 @@ import "./app/party-game-enhancements.css";
 const root = document.getElementById("root");
 if (!root) throw new Error("App root was not found");
 
-const APP_VERSION = "v1.7.1";
 const SCREEN_KEY = "sakaba-current-screen";
 const SCREEN_SLUGS = [
   "chinchiro",
