@@ -1,28 +1,13 @@
 export type GeneratedWordTuple = readonly [surface: string, reading: string, proper?: boolean];
 
-const heads = ["あ","い","う","え","お","か","き","く","け","こ","さ","し","す","せ","そ","た","ち","つ","て","と","な","に","ぬ","ね","の","は","ひ","ふ","へ","ほ","ま","み","む","め","も","や","ゆ","よ","ら","り","る","れ","ろ","わ","が","ぎ","ぐ","げ","ご","ざ","じ","ず","ぜ","ぞ","だ","で","ど","ば","び","ぶ","べ","ぼ","ぱ","ぴ","ぷ","ぺ","ぽ"];
-const syllables = ["あ","い","う","え","お","か","き","く","け","こ","さ","し","す","せ","そ","た","ち","つ","て","と","な","に","ぬ","ね","の","は","ひ","ふ","へ","ほ","ま","み","む","め","も","や","ゆ","よ","ら","り","る","れ","ろ","わ","ん"];
-
-export function makeGeneratedWords(length: number, perHead = 28): GeneratedWordTuple[] {
-  const result: GeneratedWordTuple[] = [];
-  for (const head of heads) {
-    const seen = new Set<string>();
-    let cursor = 0;
-    while (seen.size < perHead) {
-      let reading = head;
-      let value = cursor++;
-      while (Array.from(reading).length < length) {
-        const position = Array.from(reading).length;
-        const index = (value + position * 7 + head.codePointAt(0)!) % syllables.length;
-        reading += syllables[index];
-        value = Math.floor(value / syllables.length) + index * 3 + 1;
-      }
-      if (reading.endsWith("ん") && length > 1) reading = reading.slice(0, -1) + "る";
-      if (!seen.has(reading)) {
-        seen.add(reading);
-        result.push([reading, reading]);
-      }
-    }
-  }
-  return result;
+/**
+ * 実在しない文字列を回答候補として生成しないための安全弁。
+ *
+ * フェーズ1で導入した機械的なかな文字列は、語数だけは満たす一方で
+ * 日本語の単語ではない候補を表示してしまうため停止する。
+ * 各文字数の辞書ファイル構造は維持し、今後はJMdictなどから検証済みの
+ * 実在語を書き出す生成処理へ置き換える。
+ */
+export function makeGeneratedWords(_length: number, _perHead = 0): GeneratedWordTuple[] {
+  return [];
 }
