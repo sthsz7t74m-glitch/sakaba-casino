@@ -1,0 +1,41 @@
+name: Pull Request Build
+
+on:
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Use Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Type check frontend
+        run: npx tsc --noEmit -p tsconfig.frontend.json
+
+      - name: Generate dictionary
+        run: |
+          python3 scripts/generate-japanese-dictionary.py
+          test -s app/word-data-jmdict.generated.ts
+
+      - name: Build GitHub Pages
+        run: npm run build:github
+
+      - name: Verify output
+        run: |
+          test -f docs/index.html
+          VERSION=$(node -p "require('./package.json').version")
+          grep -R -q "v${VERSION}" docs/assets
