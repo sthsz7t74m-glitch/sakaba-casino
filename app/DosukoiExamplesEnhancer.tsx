@@ -3,7 +3,7 @@
 import { useEffect } from "react";
 
 const PAGE_SIZE = 30;
-const APP_VERSION = "v1.4.3";
+const APP_VERSION = "v1.5.0";
 const TIMER_STORAGE_KEY = "dosukoi-timer-minutes";
 
 const formatTime = (seconds: number) => {
@@ -15,6 +15,7 @@ const formatTime = (seconds: number) => {
 export default function DosukoiExamplesEnhancer() {
   useEffect(() => {
     let timerId: number | null = null;
+    let retryId: number | null = null;
     let remaining = 120;
     let running = false;
 
@@ -24,16 +25,40 @@ export default function DosukoiExamplesEnhancer() {
       running = false;
     };
 
-    const enhance = () => {
-      const page = document.querySelector<HTMLElement>(".dosukoi-page");
-      if (!page) {
-        stopTimer();
-        return;
-      }
+    const enhanceExamples = (page: HTMLElement) => {
+      const examples = page.querySelector<HTMLElement>(".examples");
+      if (!examples || examples.dataset.enhanced === "true") return;
+      examples.dataset.enhanced = "true";
 
-      const header = page.querySelector<HTMLElement>(".game-header");
-      const logo = header?.querySelector<HTMLElement>(".mini-logo");
-      if (logo) {
+      const items = Array.from(examples.querySelectorAll<HTMLElement>(":scope > span:not(.no-example)"));
+      if (items.length <= PAGE_SIZE) return;
+
+      let visible = PAGE_SIZE;
+      const more = document.createElement("button");
+      const render = () => {
+        items.forEach((item, index) => {
+          item.hidden = index >= visible;
+        });
+        more.textContent = `さらに表示（残り${Math.max(0, items.length - visible)}件）`;
+        more.hidden = visible >= items.length;
+      };
+
+      more.type = "button";
+      more.className = "secondary dosukoi-more";
+      more.addEventListener("click", () => {
+        visible += PAGE_SIZE;
+        render();
+      });
+      examples.insertBefore(more, examples.querySelector(".judge-note"));
+      render();
+    };
+
+    const enhanceStaticPage = () => {
+      const page = document.querySelector<HTMLElement>(".dosukoi-page");
+      if (!page) return false;
+
+      const logo = page.querySelector<HTMLElement>(".game-header .mini-logo");
+      if (logo && logo.dataset.versionBadge !== "true") {
         logo.dataset.versionBadge = "true";
         logo.classList.add("dosukoi-version-badge");
         logo.textContent = APP_VERSION;
@@ -67,11 +92,11 @@ export default function DosukoiExamplesEnhancer() {
             <label>
               <span>制限時間</span>
               <select class="dosukoi-duration" aria-label="制限時間">
-                ${[1,2,3,4,5,10].map(value => `<option value="${value}"${value === savedMinutes ? " selected" : ""}>${value}分</option>`).join("")}
+                ${[1, 2, 3, 4, 5, 10].map(value => `<option value="${value}"${value === savedMinutes ? " selected" : ""}>${value}分</option>`).join("")}
               </select>
             </label>
             <div class="timer-actions">
-              <button type="button" class="timer-pause">Ⅱ 一時停止</button>
+              <button type="button" class="timer-pause">▶ 再開</button>
               <button type="button" class="timer-reset">↻ リセット</button>
             </div>
           </div>`;
@@ -102,7 +127,11 @@ export default function DosukoiExamplesEnhancer() {
             remaining = Math.max(0, remaining - 1);
             if (remaining === 0) {
               stopTimer();
-              try { navigator.vibrate?.([160, 80, 260]); } catch {}
+              try {
+                navigator.vibrate?.([160, 80, 260]);
+              } catch {
+                // Vibration is optional.
+              }
             }
             updateTimer();
           }, 1000);
@@ -117,7 +146,8 @@ export default function DosukoiExamplesEnhancer() {
           updateTimer();
         });
         pause?.addEventListener("click", () => {
-          if (running) stopTimer(); else beginTimer();
+          if (running) stopTimer();
+          else beginTimer();
           updateTimer();
         });
         reset?.addEventListener("click", () => {
@@ -133,37 +163,35 @@ export default function DosukoiExamplesEnhancer() {
         updateTimer();
       }
 
-      const examples = page.querySelector<HTMLElement>(".examples");
-      if (!examples || examples.dataset.enhanced === "true") return;
-      examples.dataset.enhanced = "true";
-
-      const items = Array.from(examples.querySelectorAll<HTMLElement>(":scope > span:not(.no-example)"));
-      if (items.length <= PAGE_SIZE) return;
-
-      let visible = PAGE_SIZE;
-      const more = document.createElement("button");
-      const render = () => {
-        items.forEach((item, index) => { item.hidden = index >= visible; });
-        more.textContent = `さらに表示（残り${Math.max(0, items.length - visible)}件）`;
-        more.hidden = visible >= items.length;
-      };
-
-      more.type = "button";
-      more.className = "secondary dosukoi-more";
-      more.addEventListener("click", () => {
-        visible += PAGE_SIZE;
-        render();
-      });
-      examples.insertBefore(more, examples.querySelector(".judge-note"));
-      render();
+      enhanceExamples(page);
+      return true;
     };
 
-    enhance();
-    const observer = new MutationObserver(enhance);
-    observer.observe(document.body, { childList: true, subtree: true });
+    const scheduleEnhance = () => {
+      window.requestAnimationFrame(() => {
+        enhanceStaticPage();
+      });
+    };
+
+    const handleClick = (event: MouseEvent) => {
+      const target = event.target as HTMLElement | null;
+      if (!target?.closest(".dosukoi-page")) return;
+      scheduleEnhance();
+      window.setTimeout(scheduleEnhance, 30);
+    };
+
+    const retryUntilReady = () => {
+      if (enhanceStaticPage()) return;
+      retryId = window.setTimeout(retryUntilReady, 100);
+    };
+
+    document.addEventListener("click", handleClick, true);
+    retryUntilReady();
+
     return () => {
       stopTimer();
-      observer.disconnect();
+      if (retryId !== null) window.clearTimeout(retryId);
+      document.removeEventListener("click", handleClick, true);
     };
   }, []);
 
