@@ -3,8 +3,8 @@
 import { useEffect } from "react";
 import { getPartyGameContent } from "./party-games/content";
 import { createElement, pickDifferent, removeLegacyVersionBadges, vibrate } from "./party-games/runtime";
+import { APP_VERSION } from "./version";
 
-const APP_VERSION = "v1.7.1";
 const EXCLUDED_TITLES = new Set(["どすこい"]);
 
 function findGamePage(): HTMLElement | null {
