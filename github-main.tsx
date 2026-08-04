@@ -6,10 +6,9 @@ import "./app/globals.css";
 import "./app/dosukoi-enhancements.css";
 
 const root = document.getElementById("root");
-
 if (!root) throw new Error("App root was not found");
 
-const APP_VERSION = "v1.4.3";
+const APP_VERSION = "v1.5.0";
 const SCREEN_KEY = "sakaba-current-screen";
 const SCREEN_SLUGS = [
   "chinchiro",
@@ -32,22 +31,53 @@ const SCREEN_SLUGS = [
   "common-point",
 ] as const;
 
-function getGameCards() {
+type ScreenSlug = (typeof SCREEN_SLUGS)[number];
+
+function isScreenSlug(value: string): value is ScreenSlug {
+  return SCREEN_SLUGS.includes(value as ScreenSlug);
+}
+
+function getHashSlug(): ScreenSlug | null {
+  const value = window.location.hash.replace(/^#/, "");
+  return isScreenSlug(value) ? value : null;
+}
+
+function getSavedSlug(): ScreenSlug | null {
+  const value = localStorage.getItem(SCREEN_KEY) ?? "";
+  return isScreenSlug(value) ? value : null;
+}
+
+function getGameCards(): HTMLButtonElement[] {
   return Array.from(document.querySelectorAll<HTMLButtonElement>("button.game-card"));
 }
 
-function restoreScreenFromUrl() {
-  const slug = window.location.hash.replace(/^#/, "");
-  if (!slug) return;
-  const index = SCREEN_SLUGS.indexOf(slug as (typeof SCREEN_SLUGS)[number]);
-  if (index < 0) return;
-  getGameCards()[index]?.click();
+function openScreen(slug: ScreenSlug): boolean {
+  const index = SCREEN_SLUGS.indexOf(slug);
+  const card = getGameCards()[index];
+  if (!card) return false;
+  card.click();
+  return true;
+}
+
+function restoreScreenOnce(slug: ScreenSlug, signal: AbortSignal) {
+  const startedAt = performance.now();
+
+  const attempt = () => {
+    if (signal.aborted) return;
+    if (openScreen(slug)) return;
+    if (performance.now() - startedAt >= 5000) return;
+    window.requestAnimationFrame(attempt);
+  };
+
+  attempt();
 }
 
 function VersionBadge() {
   return (
     <>
-      <div className="app-version" aria-label={`アプリバージョン ${APP_VERSION}`}>{APP_VERSION}</div>
+      <div className="app-version" aria-label={`アプリバージョン ${APP_VERSION}`}>
+        {APP_VERSION}
+      </div>
       <style>{`
         .app-version {
           position: fixed;
@@ -68,9 +98,7 @@ function VersionBadge() {
           backdrop-filter: blur(8px);
           -webkit-backdrop-filter: blur(8px);
         }
-        body:has(.dosukoi-page) .app-version {
-          display: none;
-        }
+        body:has(.dosukoi-page) .app-version { display: none; }
       `}</style>
     </>
   );
@@ -78,9 +106,27 @@ function VersionBadge() {
 
 function App() {
   useEffect(() => {
+    const controller = new AbortController();
+    let restoring = false;
+
+    const restore = (slug: ScreenSlug | null) => {
+      if (!slug) return;
+      restoring = true;
+      restoreScreenOnce(slug, controller.signal);
+      window.setTimeout(() => {
+        restoring = false;
+      }, 250);
+    };
+
+    const initialSlug = getHashSlug() ?? getSavedSlug();
+    if (initialSlug) {
+      if (!window.location.hash) history.replaceState(null, "", `#${initialSlug}`);
+      restore(initialSlug);
+    }
+
     const rememberScreen = (event: MouseEvent) => {
-      const target = event.target as HTMLElement | null;
-      const button = target?.closest<HTMLButtonElement>("button");
+      if (restoring) return;
+      const button = (event.target as HTMLElement | null)?.closest<HTMLButtonElement>("button");
       if (!button) return;
 
       if (button.classList.contains("back")) {
@@ -89,42 +135,28 @@ function App() {
         return;
       }
 
-      if (button.classList.contains("game-card")) {
-        const index = getGameCards().indexOf(button);
-        const slug = SCREEN_SLUGS[index];
-        if (!slug) return;
-        localStorage.setItem(SCREEN_KEY, slug);
-        history.replaceState(null, "", `#${slug}`);
-      }
+      if (!button.classList.contains("game-card")) return;
+      const index = getGameCards().indexOf(button);
+      const slug = SCREEN_SLUGS[index];
+      if (!slug) return;
+      localStorage.setItem(SCREEN_KEY, slug);
+      history.replaceState(null, "", `#${slug}`);
     };
 
-    const restore = () => {
-      const hashSlug = window.location.hash.replace(/^#/, "");
-      const savedSlug = localStorage.getItem(SCREEN_KEY) ?? "";
-      const slug = SCREEN_SLUGS.includes(hashSlug as (typeof SCREEN_SLUGS)[number]) ? hashSlug : savedSlug;
-      if (!SCREEN_SLUGS.includes(slug as (typeof SCREEN_SLUGS)[number])) return;
-      if (!window.location.hash) history.replaceState(null, "", `#${slug}`);
-      window.setTimeout(restoreScreenFromUrl, 0);
-    };
-
-    const syncVersionBadge = () => {
-      const badge = document.querySelector<HTMLElement>(".dosukoi-version-badge");
-      if (!badge) return;
-      badge.textContent = APP_VERSION;
-      badge.setAttribute("aria-label", `アプリバージョン ${APP_VERSION}`);
+    const handleHashChange = () => {
+      const slug = getHashSlug();
+      if (!slug) return;
+      localStorage.setItem(SCREEN_KEY, slug);
+      restore(slug);
     };
 
     document.addEventListener("click", rememberScreen, true);
-    window.addEventListener("hashchange", restoreScreenFromUrl);
-    const observer = new MutationObserver(syncVersionBadge);
-    observer.observe(document.body, { childList: true, subtree: true });
-    restore();
-    syncVersionBadge();
+    window.addEventListener("hashchange", handleHashChange);
 
     return () => {
+      controller.abort();
       document.removeEventListener("click", rememberScreen, true);
-      window.removeEventListener("hashchange", restoreScreenFromUrl);
-      observer.disconnect();
+      window.removeEventListener("hashchange", handleHashChange);
     };
   }, []);
 
