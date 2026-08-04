@@ -4,6 +4,7 @@ import { useEffect } from "react";
 import { ensureGameHeaderVersion } from "./components/GameHeaderVersion";
 import { ensurePartyTip } from "./components/PartyTip";
 import { ensurePrimaryActions } from "./components/PrimaryAction";
+import { ensureSecondaryActions } from "./components/SecondaryAction";
 import { getPartyGameContent } from "./party-games/content";
 import { removeLegacyVersionBadges } from "./party-games/runtime";
 import { APP_VERSION } from "./version";
@@ -31,6 +32,7 @@ function enhancePage(page: HTMLElement): void {
   ensureGameHeaderVersion(page);
   ensurePartyTip(page, anchor, content.tip);
   ensurePrimaryActions(page);
+  ensureSecondaryActions(page);
   page.dataset.partyEnhanced = APP_VERSION;
 }
 
