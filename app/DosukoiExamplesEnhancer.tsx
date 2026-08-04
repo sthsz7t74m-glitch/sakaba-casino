@@ -1,9 +1,9 @@
 "use client";
 
 import { useEffect } from "react";
+import { ensureGameHeaderVersion } from "./components/GameHeaderVersion";
 
 const PAGE_SIZE = 30;
-const APP_VERSION = "v1.6.2";
 const TIMER_STORAGE_KEY = "dosukoi-timer-minutes";
 
 const formatTime = (seconds: number) => {
@@ -57,14 +57,7 @@ export default function DosukoiExamplesEnhancer() {
       const page = document.querySelector<HTMLElement>(".dosukoi-page");
       if (!page) return false;
 
-      const logo = page.querySelector<HTMLElement>(".game-header .mini-logo");
-      if (logo && logo.dataset.versionBadge !== "true") {
-        logo.dataset.versionBadge = "true";
-        logo.classList.add("dosukoi-version-badge");
-        logo.textContent = APP_VERSION;
-        logo.setAttribute("aria-label", `アプリバージョン ${APP_VERSION}`);
-        logo.removeAttribute("aria-hidden");
-      }
+      ensureGameHeaderVersion(page);
 
       const toggle = Array.from(page.querySelectorAll<HTMLButtonElement>("button.secondary")).find(button =>
         button.textContent?.includes("答えの例"),
