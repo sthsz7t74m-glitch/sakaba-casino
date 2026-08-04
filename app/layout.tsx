@@ -4,7 +4,6 @@ import "./dosukoi-enhancements.css";
 import "./party-game-enhancements.css";
 import "./five-seconds-v2.css";
 import DosukoiExamplesEnhancer from "./DosukoiExamplesEnhancer";
-import FiveSecondsV2 from "./FiveSecondsV2";
 import PartyGameEnhancer from "./PartyGameEnhancer";
 
 export const metadata: Metadata = {
@@ -14,5 +13,5 @@ export const metadata: Metadata = {
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
-  return <html lang="ja"><body>{children}<DosukoiExamplesEnhancer /><PartyGameEnhancer /><FiveSecondsV2 /></body></html>;
+  return <html lang="ja"><body>{children}<DosukoiExamplesEnhancer /><PartyGameEnhancer /></body></html>;
 }
