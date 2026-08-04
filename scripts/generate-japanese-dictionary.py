@@ -6,12 +6,16 @@ import gzip
 import io
 import json
 import re
+import subprocess
 import sys
-import urllib.request
+import tempfile
 from collections import defaultdict, deque
 from pathlib import Path
 
-SOURCE_URL = "https://ftp.edrdg.org/pub/Nihongo/edict2.gz"
+SOURCE_URLS = (
+    "https://www.edrdg.org/pub/Nihongo/edict2.gz",
+    "https://ftp.edrdg.org/pub/Nihongo/edict2.gz",
+)
 OUTPUT = Path("app/word-data-jmdict.generated.ts")
 MIN_LENGTH = 3
 MAX_LENGTH = 20
@@ -90,6 +94,7 @@ def validate(rows: list[tuple[str, str]]) -> dict[tuple[str, int], int]:
         ("ら", 4): 10,
         ("ば", 3): 10,
         ("ば", 4): 10,
+        ("ぶ", 4): 10,
         ("あ", 4): 10,
         ("か", 5): 10,
     }
@@ -103,10 +108,52 @@ def validate(rows: list[tuple[str, str]]) -> dict[tuple[str, int], int]:
     return counts
 
 
+def existing_dictionary_is_usable() -> bool:
+    if not OUTPUT.exists():
+        return False
+    try:
+        text = OUTPUT.read_text(encoding="utf-8")
+    except OSError:
+        return False
+    return text.count("  [") >= MIN_GENERATED_ENTRIES
+
+
+def download_dictionary() -> bytes | None:
+    for url in SOURCE_URLS:
+        with tempfile.NamedTemporaryFile(suffix=".gz") as temp:
+            command = [
+                "curl", "--fail", "--location", "--silent", "--show-error",
+                "--retry", "5", "--retry-delay", "3", "--retry-all-errors",
+                "--connect-timeout", "30", "--max-time", "240",
+                "--user-agent", "sakaba-casino-dictionary-builder/5.0",
+                "--output", temp.name, url,
+            ]
+            print(f"Downloading EDICT2 from {url}")
+            result = subprocess.run(command, check=False)
+            if result.returncode != 0:
+                print(f"Download failed for {url} (curl exit {result.returncode})", file=sys.stderr)
+                continue
+            data = Path(temp.name).read_bytes()
+            if len(data) < 1_000_000:
+                print(f"Downloaded file from {url} is unexpectedly small ({len(data)} bytes)", file=sys.stderr)
+                continue
+            try:
+                with gzip.GzipFile(fileobj=io.BytesIO(data)) as archive:
+                    archive.read(1024)
+            except OSError as error:
+                print(f"Downloaded file from {url} is not valid gzip: {error}", file=sys.stderr)
+                continue
+            return data
+    return None
+
+
 def main() -> int:
-    request = urllib.request.Request(SOURCE_URL, headers={"User-Agent": "sakaba-casino-dictionary-builder/4.0"})
-    with urllib.request.urlopen(request, timeout=120) as response:
-        compressed = response.read()
+    compressed = download_dictionary()
+    if compressed is None:
+        if existing_dictionary_is_usable():
+            print("All dictionary downloads failed; reusing the committed generated dictionary.")
+            return 0
+        raise RuntimeError("All official EDICT2 download endpoints failed and no usable cached dictionary exists")
 
     entries: set[tuple[str, str]] = set()
     with gzip.GzipFile(fileobj=io.BytesIO(compressed)) as archive:
@@ -131,7 +178,7 @@ def main() -> int:
         file.write("];\n")
 
     print(f"Parsed {len(entries)} unique entries; generated {len(rows)} balanced mobile entries")
-    for kana, length in (("ら", 4), ("ば", 3), ("ば", 4), ("あ", 4), ("か", 5)):
+    for kana, length in (("ら", 4), ("ば", 3), ("ば", 4), ("ぶ", 4), ("あ", 4), ("か", 5)):
         print(f"bucket {kana}/{length}={counts[(kana, length)]}")
     return 0
 
