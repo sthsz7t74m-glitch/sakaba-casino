@@ -2,8 +2,9 @@
 
 import { useEffect } from "react";
 import { ensureGameHeaderVersion } from "./components/GameHeaderVersion";
+import { ensurePartyTip } from "./components/PartyTip";
 import { getPartyGameContent } from "./party-games/content";
-import { createElement, removeLegacyVersionBadges } from "./party-games/runtime";
+import { removeLegacyVersionBadges } from "./party-games/runtime";
 import { APP_VERSION } from "./version";
 
 const EXCLUDED_TITLES = new Set(["どすこい"]);
@@ -14,13 +15,6 @@ function findGamePage(): HTMLElement | null {
 
 function findGameTitle(page: HTMLElement): string {
   return page.querySelector<HTMLElement>(".game-header h1, .game-header h2")?.textContent?.trim() ?? "";
-}
-
-function addTip(page: HTMLElement, anchor: HTMLElement, tip?: string): void {
-  if (!tip || page.querySelector(".party-tip")) return;
-  const box = createElement("aside", "party-tip");
-  box.append(createElement("b", undefined, "盛り上がるコツ"), createElement("span", undefined, tip));
-  anchor.before(box);
 }
 
 function enhancePage(page: HTMLElement): void {
@@ -34,7 +28,7 @@ function enhancePage(page: HTMLElement): void {
   if (!anchor) return;
 
   ensureGameHeaderVersion(page);
-  addTip(page, anchor, content.tip);
+  ensurePartyTip(page, anchor, content.tip);
   page.dataset.partyEnhanced = APP_VERSION;
 }
 
