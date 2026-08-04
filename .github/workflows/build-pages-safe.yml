@@ -40,12 +40,12 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Generate large Japanese dictionary
+      - name: Generate or reuse large Japanese dictionary
         run: |
           python3 scripts/generate-japanese-dictionary.py
           test -s app/word-data-jmdict.generated.ts
           DICTIONARY_LINES=$(wc -l < app/word-data-jmdict.generated.ts)
-          echo "Generated dictionary lines: ${DICTIONARY_LINES}"
+          echo "Dictionary lines: ${DICTIONARY_LINES}"
           test "${DICTIONARY_LINES}" -gt 25000
           grep -q 'export const jmdictWordTuples' app/word-data-jmdict.generated.ts
 
@@ -61,19 +61,19 @@ jobs:
           JS_BYTES=$(wc -c < "${JS_FILE}")
           echo "Generated JavaScript bytes: ${JS_BYTES}"
           test "${JS_BYTES}" -gt 1000000
-          grep -q 'v1.5.1' "${JS_FILE}"
+          grep -q 'v1.5.2' "${JS_FILE}"
           echo "Generated docs:"
           find docs -maxdepth 2 -type f | sort | head -50
 
-      - name: Commit generated Pages files safely
+      - name: Commit generated dictionary and Pages safely
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add -A docs
+          git add -A app/word-data-jmdict.generated.ts docs
           if git diff --cached --quiet; then
             echo "No generated changes"
             exit 0
           fi
-          git commit -m "GitHub Pagesをv1.5.1大規模辞書版へ更新"
+          git commit -m "GitHub Pagesをv1.5.2大規模辞書版へ更新"
           git pull --rebase origin main
           git push origin HEAD:main
