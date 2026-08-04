@@ -74,12 +74,6 @@ const increment = (map: Map<string, number>, key: string): void => {
   map.set(key, (map.get(key) ?? 0) + 1);
 };
 
-/**
- * Picks the next word which is least similar to words already displayed.
- * Two-character repetition receives an intentionally huge penalty, followed by
- * three- and four-character repetition. This prevents a けい〜 cluster from
- * occupying the first page even when the source dictionary itself is sorted.
- */
 function takeMostDiverse(lane: DictionaryWord[], usage: PrefixUsage): DictionaryWord | undefined {
   if (lane.length === 0) return undefined;
 
@@ -87,18 +81,23 @@ function takeMostDiverse(lane: DictionaryWord[], usage: PrefixUsage): Dictionary
   let bestScore = Number.POSITIVE_INFINITY;
   for (let index = 0; index < lane.length; index += 1) {
     const word = lane[index];
+    if (!word) continue;
+
     const score =
       (usage.two.get(prefix(word, 2)) ?? 0) * 10_000 +
       (usage.three.get(prefix(word, 3)) ?? 0) * 500 +
       (usage.four.get(prefix(word, 4)) ?? 0) * 25 +
       Math.random();
+
     if (score < bestScore) {
       bestScore = score;
       bestIndex = index;
     }
   }
 
-  const [selected] = lane.splice(bestIndex, 1);
+  const selected = lane.splice(bestIndex, 1)[0];
+  if (!selected) return undefined;
+
   increment(usage.two, prefix(selected, 2));
   increment(usage.three, prefix(selected, 3));
   increment(usage.four, prefix(selected, 4));
@@ -106,35 +105,36 @@ function takeMostDiverse(lane: DictionaryWord[], usage: PrefixUsage): Dictionary
 }
 
 function balancedFamiliarOrder(bucket: readonly DictionaryWord[]): DictionaryWord[] {
-  const lanes = [
+  const lanes: DictionaryWord[][] = [
     shuffle(bucket.filter(word => !word.proper && sourcePriority(word) <= 3)),
     shuffle(bucket.filter(word => word.proper && sourcePriority(word) <= 2)),
     shuffle(bucket.filter(word => !word.proper && sourcePriority(word) > 3)),
     shuffle(bucket.filter(word => word.proper && sourcePriority(word) > 2)),
   ];
 
-  // Common words remain the majority, but famous characters and titles are
-  // regularly mixed in. Selection inside each lane is diversity-first.
   const pattern = [0, 1, 0, 2, 0, 1, 0, 2, 0, 3];
   const usage: PrefixUsage = { two: new Map(), three: new Map(), four: new Map() };
   const result: DictionaryWord[] = [];
 
   while (lanes.some(lane => lane.length > 0)) {
     let progressed = false;
+
     for (const laneIndex of pattern) {
-      let next = takeMostDiverse(lanes[laneIndex], usage);
+      const preferredLane = lanes[laneIndex];
+      let next = preferredLane ? takeMostDiverse(preferredLane, usage) : undefined;
+
       if (!next) {
-        // Keep filling even when a preferred lane is exhausted.
         const fallbackLane = lanes
-          .map((lane, index) => ({ lane, index }))
-          .filter(item => item.lane.length > 0)
-          .sort((a, b) => a.lane.length - b.lane.length)[0];
-        if (fallbackLane) next = takeMostDiverse(fallbackLane.lane, usage);
+          .filter(lane => lane.length > 0)
+          .sort((a, b) => a.length - b.length)[0];
+        if (fallbackLane) next = takeMostDiverse(fallbackLane, usage);
       }
+
       if (!next) continue;
       result.push(next);
       progressed = true;
     }
+
     if (!progressed) break;
   }
 
@@ -193,6 +193,8 @@ export class DictionaryEngine {
       const characters = Array.from(word.reading);
       const length = characters.length;
       const head = characters[0];
+      if (!head) continue;
+
       const byKana = this.buckets.get(length) ?? new Map<string, readonly DictionaryWord[]>();
       const current = byKana.get(head) ?? [];
       byKana.set(head, [...current, word]);
@@ -215,14 +217,18 @@ export class DictionaryEngine {
     const normalizedKana = normalizeReading(kana);
     if (length < MIN_LENGTH || length > MAX_LENGTH || !normalizedKana) return [];
 
-    const bucket = this.buckets.get(length)?.get(Array.from(normalizedKana)[0]) ?? [];
+    const head = Array.from(normalizedKana)[0];
+    if (!head) return [];
+
+    const bucket = this.buckets.get(length)?.get(head) ?? [];
     const result = balancedFamiliarOrder(bucket);
     return typeof limit === "number" ? result.slice(0, Math.max(0, limit)) : result;
   }
 
   count(kana: string, length: number): number {
     const normalizedKana = normalizeReading(kana);
-    if (!normalizedKana) return 0;
-    return this.buckets.get(length)?.get(Array.from(normalizedKana)[0])?.length ?? 0;
+    const head = Array.from(normalizedKana)[0];
+    if (!head) return 0;
+    return this.buckets.get(length)?.get(head)?.length ?? 0;
   }
 }
