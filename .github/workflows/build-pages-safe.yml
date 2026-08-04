@@ -61,7 +61,9 @@ jobs:
           JS_BYTES=$(wc -c < "${JS_FILE}")
           echo "Generated JavaScript bytes: ${JS_BYTES}"
           test "${JS_BYTES}" -gt 1000000
-          grep -q 'v1.5.2' "${JS_FILE}"
+          VERSION=$(node -p "require('./package.json').version")
+          grep -q "v${VERSION}" "${JS_FILE}"
+          echo "Verified release v${VERSION}"
           echo "Generated docs:"
           find docs -maxdepth 2 -type f | sort | head -50
 
@@ -74,6 +76,7 @@ jobs:
             echo "No generated changes"
             exit 0
           fi
-          git commit -m "GitHub Pagesをv1.5.2大規模辞書版へ更新"
+          VERSION=$(node -p "require('./package.json').version")
+          git commit -m "GitHub Pagesをv${VERSION}大規模辞書版へ更新"
           git pull --rebase origin main
           git push origin HEAD:main
