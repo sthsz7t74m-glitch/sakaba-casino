@@ -1,7 +1,9 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import "./dosukoi-enhancements.css";
+import "./party-game-enhancements.css";
 import DosukoiExamplesEnhancer from "./DosukoiExamplesEnhancer";
+import PartyGameEnhancer from "./PartyGameEnhancer";
 
 export const metadata: Metadata = {
   title: "宴会ゲームBOX｜みんなで遊べるゲーム集",
@@ -10,5 +12,5 @@ export const metadata: Metadata = {
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
-  return <html lang="ja"><body>{children}<DosukoiExamplesEnhancer /></body></html>;
+  return <html lang="ja"><body>{children}<DosukoiExamplesEnhancer /><PartyGameEnhancer /></body></html>;
 }
