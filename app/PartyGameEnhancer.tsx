@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
+import { ensureCardSurfaces } from "./components/CardSurface";
 import { ensureFormControls } from "./components/FormControls";
 import { ensureGameHeaderVersion } from "./components/GameHeaderVersion";
 import { ensureModalDialogs } from "./components/ModalDialog";
@@ -37,6 +38,7 @@ function enhancePage(page: HTMLElement): void {
   ensureSecondaryActions(page);
   ensureFormControls(page);
   ensureModalDialogs(page);
+  ensureCardSurfaces(page);
   page.dataset.partyEnhanced = APP_VERSION;
 }
 
