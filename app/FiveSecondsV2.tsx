@@ -171,11 +171,16 @@ export default function FiveSecondsV2() {
   useEffect(() => {
     let mountedPage: HTMLElement | null = null;
     let root: Root | null = null;
+    let scheduled = false;
 
-    const mount = () => {
-      const pages = Array.from(document.querySelectorAll<HTMLElement>(".game-page"));
-      const page = pages.find((item) => item.querySelector(".game-header h1, .game-header h2")?.textContent?.trim() === "5秒ぴったり") ?? null;
-      if (!page || page === mountedPage) return;
+    const findFiveSecondsPage = (scope: ParentNode = document): HTMLElement | null => {
+      const pages = Array.from(scope.querySelectorAll<HTMLElement>(".game-page"));
+      if (scope instanceof HTMLElement && scope.matches(".game-page")) pages.unshift(scope);
+      return pages.find((item) => item.querySelector(".game-header h1, .game-header h2")?.textContent?.trim() === "5秒ぴったり") ?? null;
+    };
+
+    const mountPage = (page: HTMLElement) => {
+      if (page === mountedPage && page.isConnected) return;
 
       root?.unmount();
       mountedPage?.querySelector<HTMLElement>("[data-five-seconds-v2]")?.remove();
@@ -183,16 +188,42 @@ export default function FiveSecondsV2() {
 
       mountedPage = page;
       page.querySelectorAll<HTMLElement>(":scope > .play-card").forEach((card) => { card.hidden = true; });
-      const host = document.createElement("div");
+      const existingHost = page.querySelector<HTMLElement>(":scope > [data-five-seconds-v2]");
+      const host = existingHost ?? document.createElement("div");
       host.dataset.fiveSecondsV2 = "true";
-      page.append(host);
+      if (!existingHost) page.append(host);
       root = createRoot(host);
       root.render(<FiveSecondsGame />);
     };
 
-    const observer = new MutationObserver(mount);
+    const scanDocument = () => {
+      scheduled = false;
+      const page = findFiveSecondsPage();
+      if (page) mountPage(page);
+    };
+
+    const scheduleScan = () => {
+      if (scheduled) return;
+      scheduled = true;
+      window.requestAnimationFrame(scanDocument);
+    };
+
+    const observer = new MutationObserver((records) => {
+      if (mountedPage?.isConnected) {
+        const hasExternalPageChange = records.some((record) =>
+          Array.from(record.addedNodes).some((node) =>
+            node instanceof HTMLElement &&
+            !node.closest("[data-five-seconds-v2]") &&
+            (node.matches(".game-page") || Boolean(node.querySelector(".game-page"))),
+          ),
+        );
+        if (!hasExternalPageChange) return;
+      }
+      scheduleScan();
+    });
+
     observer.observe(document.body, { childList: true, subtree: true });
-    mount();
+    scheduleScan();
 
     return () => {
       observer.disconnect();
