@@ -1,6 +1,6 @@
 {
   "name": "sakaba-casino",
-  "version": "1.0.0",
+  "version": "1.4.0",
   "private": true,
   "engines": {
     "node": ">=22.13.0"
@@ -41,5 +41,5 @@
     "wrangler": "4.92.0"
   },
   "type": "module",
-  "displayName": "\u5bb4\u4f1a\u30b2\u30fc\u30e0BOX"
+  "displayName": "宴会ゲームBOX"
 }
