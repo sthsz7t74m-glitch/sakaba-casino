@@ -26,8 +26,6 @@ const MIN_LENGTH = 3;
 const MAX_LENGTH = 20;
 const READING_PATTERN = /^[ぁ-ゖー]+$/u;
 
-// Smaller is better. Hand-curated/familiar sources are intentionally ahead of
-// mechanically generated dictionary entries.
 const SOURCE_PRIORITY: Readonly<Record<string, number>> = Object.freeze({
   familiar: 0,
   extra: 1,
@@ -63,72 +61,83 @@ function shuffle<T>(items: readonly T[]): T[] {
   return result;
 }
 
+const prefix = (word: DictionaryWord, length: number): string =>
+  Array.from(word.reading).slice(0, length).join("");
+
+type PrefixUsage = {
+  two: Map<string, number>;
+  three: Map<string, number>;
+  four: Map<string, number>;
+};
+
+const increment = (map: Map<string, number>, key: string): void => {
+  map.set(key, (map.get(key) ?? 0) + 1);
+};
+
 /**
- * Prevents results such as けい〜 / けい〜 / けい〜 from filling the first page.
- * Words are grouped by the first two reading characters and then selected in a
- * round-robin. The first character is already fixed by the game prompt.
+ * Picks the next word which is least similar to words already displayed.
+ * Two-character repetition receives an intentionally huge penalty, followed by
+ * three- and four-character repetition. This prevents a けい〜 cluster from
+ * occupying the first page even when the source dictionary itself is sorted.
  */
-function spreadReadingPrefixes(words: readonly DictionaryWord[]): DictionaryWord[] {
-  const groups = new Map<string, DictionaryWord[]>();
-  for (const word of words) {
-    const chars = Array.from(word.reading);
-    const key = chars.slice(0, Math.min(2, chars.length)).join("");
-    const group = groups.get(key) ?? [];
-    group.push(word);
-    groups.set(key, group);
-  }
+function takeMostDiverse(lane: DictionaryWord[], usage: PrefixUsage): DictionaryWord | undefined {
+  if (lane.length === 0) return undefined;
 
-  const queues = shuffle(
-    [...groups.entries()].map(([key, values]) => ({
-      key,
-      values: shuffle(values).sort((a, b) => sourcePriority(a) - sourcePriority(b)),
-    })),
-  ).sort((a, b) => {
-    const aPriority = Math.min(...a.values.map(sourcePriority));
-    const bPriority = Math.min(...b.values.map(sourcePriority));
-    return aPriority - bPriority;
-  });
-
-  const result: DictionaryWord[] = [];
-  let remaining = queues.reduce((sum, queue) => sum + queue.values.length, 0);
-  while (remaining > 0) {
-    for (const queue of queues) {
-      const next = queue.values.shift();
-      if (!next) continue;
-      result.push(next);
-      remaining -= 1;
+  let bestIndex = 0;
+  let bestScore = Number.POSITIVE_INFINITY;
+  for (let index = 0; index < lane.length; index += 1) {
+    const word = lane[index];
+    const score =
+      (usage.two.get(prefix(word, 2)) ?? 0) * 10_000 +
+      (usage.three.get(prefix(word, 3)) ?? 0) * 500 +
+      (usage.four.get(prefix(word, 4)) ?? 0) * 25 +
+      Math.random();
+    if (score < bestScore) {
+      bestScore = score;
+      bestIndex = index;
     }
   }
-  return result;
+
+  const [selected] = lane.splice(bestIndex, 1);
+  increment(usage.two, prefix(selected, 2));
+  increment(usage.three, prefix(selected, 3));
+  increment(usage.four, prefix(selected, 4));
+  return selected;
 }
 
 function balancedFamiliarOrder(bucket: readonly DictionaryWord[]): DictionaryWord[] {
-  const curatedOrdinary = bucket.filter(word => !word.proper && sourcePriority(word) <= 3);
-  const curatedProper = bucket.filter(word => word.proper && sourcePriority(word) <= 2);
-  const generatedOrdinary = bucket.filter(word => !word.proper && sourcePriority(word) > 3);
-  const remainingProper = bucket.filter(word => word.proper && sourcePriority(word) > 2);
-
   const lanes = [
-    spreadReadingPrefixes(curatedOrdinary),
-    spreadReadingPrefixes(curatedProper),
-    spreadReadingPrefixes(generatedOrdinary),
-    spreadReadingPrefixes(remainingProper),
+    shuffle(bucket.filter(word => !word.proper && sourcePriority(word) <= 3)),
+    shuffle(bucket.filter(word => word.proper && sourcePriority(word) <= 2)),
+    shuffle(bucket.filter(word => !word.proper && sourcePriority(word) > 3)),
+    shuffle(bucket.filter(word => word.proper && sourcePriority(word) > 2)),
   ];
 
-  // The first 30 results are roughly 18 familiar common words, 6 famous proper
-  // nouns/characters and 6 long-tail dictionary words when enough data exists.
-  const pattern = [0, 0, 1, 0, 2, 0, 1, 2, 0, 3];
+  // Common words remain the majority, but famous characters and titles are
+  // regularly mixed in. Selection inside each lane is diversity-first.
+  const pattern = [0, 1, 0, 2, 0, 1, 0, 2, 0, 3];
+  const usage: PrefixUsage = { two: new Map(), three: new Map(), four: new Map() };
   const result: DictionaryWord[] = [];
+
   while (lanes.some(lane => lane.length > 0)) {
     let progressed = false;
     for (const laneIndex of pattern) {
-      const next = lanes[laneIndex].shift();
+      let next = takeMostDiverse(lanes[laneIndex], usage);
+      if (!next) {
+        // Keep filling even when a preferred lane is exhausted.
+        const fallbackLane = lanes
+          .map((lane, index) => ({ lane, index }))
+          .filter(item => item.lane.length > 0)
+          .sort((a, b) => a.lane.length - b.lane.length)[0];
+        if (fallbackLane) next = takeMostDiverse(fallbackLane.lane, usage);
+      }
       if (!next) continue;
       result.push(next);
       progressed = true;
     }
     if (!progressed) break;
   }
+
   return result;
 }
 
