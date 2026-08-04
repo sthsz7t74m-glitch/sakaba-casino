@@ -1,13 +1,15 @@
 "use client";
 
 import { useEffect } from "react";
-import { ensureCardSurfaces } from "./components/CardSurface";
-import { ensureFormControls } from "./components/FormControls";
-import { ensureGameHeaderVersion } from "./components/GameHeaderVersion";
-import { ensureModalDialogs } from "./components/ModalDialog";
-import { ensurePartyTip } from "./components/PartyTip";
-import { ensurePrimaryActions } from "./components/PrimaryAction";
-import { ensureSecondaryActions } from "./components/SecondaryAction";
+import {
+  ensureCardSurfaces,
+  ensureFormControls,
+  ensureGameHeaderVersion,
+  ensureModalDialogs,
+  ensurePartyTip,
+  ensurePrimaryActions,
+  ensureSecondaryActions,
+} from "./components";
 import { getPartyGameContent } from "./party-games/content";
 import { removeLegacyVersionBadges } from "./party-games/runtime";
 import { APP_VERSION } from "./version";
@@ -44,14 +46,10 @@ function enhancePage(page: HTMLElement): void {
 
 export default function PartyGameEnhancer() {
   useEffect(() => {
-    let currentPage: HTMLElement | null = null;
-
     const enhance = () => {
       removeLegacyVersionBadges();
       const page = findGamePage();
-      if (!page) return;
-      if (page !== currentPage) currentPage = page;
-      enhancePage(page);
+      if (page) enhancePage(page);
     };
 
     const observer = new MutationObserver(enhance);
