@@ -3,7 +3,7 @@
 import { useEffect } from "react";
 
 const PAGE_SIZE = 30;
-const APP_VERSION = "v1.4.2";
+const APP_VERSION = "v1.4.3";
 const TIMER_STORAGE_KEY = "dosukoi-timer-minutes";
 
 const formatTime = (seconds: number) => {
@@ -33,7 +33,7 @@ export default function DosukoiExamplesEnhancer() {
 
       const header = page.querySelector<HTMLElement>(".game-header");
       const logo = header?.querySelector<HTMLElement>(".mini-logo");
-      if (logo && logo.dataset.versionBadge !== "true") {
+      if (logo) {
         logo.dataset.versionBadge = "true";
         logo.classList.add("dosukoi-version-badge");
         logo.textContent = APP_VERSION;
