@@ -21,6 +21,7 @@ OUTPUT = Path("app/word-data-jmdict.generated.ts")
 MIN_LENGTH = 3
 MAX_LENGTH = 20
 MAX_ENTRIES = 120000
+MIN_EXPECTED_ENTRIES = 50000
 
 KATAKANA_START = ord("ァ")
 KATAKANA_END = ord("ヶ")
@@ -47,8 +48,11 @@ def valid_reading(reading: str) -> bool:
 
 
 def parse_line(line: str) -> tuple[str, str] | None:
-    if line.startswith("　") or "/EntL" in line:
+    # EDICT2 appends an /EntL.../ identifier to normal dictionary entries.
+    # Do not filter on EntL: doing so discards the entire dictionary.
+    if not line or line.startswith("　") or line.startswith("EDICT2"):
         return None
+
     head = line.split(" /", 1)[0].strip()
     match = re.match(r"^(.*?)\s+\[([^]]+)\]$", head)
     if match:
@@ -57,6 +61,7 @@ def parse_line(line: str) -> tuple[str, str] | None:
     else:
         surface = clean_surface(head.split(";")[0])
         reading = surface
+
     reading = to_hiragana(reading.strip())
     if not surface or not valid_reading(reading):
         return None
@@ -83,7 +88,7 @@ def choose_balanced(entries: set[tuple[str, str]]) -> list[tuple[str, str]]:
 
 
 def main() -> int:
-    request = urllib.request.Request(SOURCE_URL, headers={"User-Agent": "sakaba-casino-dictionary-builder/2.0"})
+    request = urllib.request.Request(SOURCE_URL, headers={"User-Agent": "sakaba-casino-dictionary-builder/3.0"})
     with urllib.request.urlopen(request, timeout=120) as response:
         compressed = response.read()
 
@@ -94,11 +99,30 @@ def main() -> int:
             if parsed is not None:
                 entries.add(parsed)
 
+    if len(entries) < MIN_EXPECTED_ENTRIES:
+        raise RuntimeError(
+            f"Dictionary parsing produced only {len(entries)} entries; expected at least {MIN_EXPECTED_ENTRIES}"
+        )
+
     rows = choose_balanced(entries)
-    required = [("ら", 4), ("ば", 3)]
-    missing = [f"{kana}:{length}" for kana, length in required if not any(r[0] == kana and len(r) == length for _, r in rows)]
-    if missing:
-        raise RuntimeError(f"Required dictionary buckets are empty: {', '.join(missing)}")
+    counts: dict[tuple[str, int], int] = defaultdict(int)
+    for _, reading in rows:
+        counts[(reading[0], len(reading))] += 1
+
+    required_minimums = {
+        ("ら", 4): 10,
+        ("ば", 3): 10,
+        ("ば", 4): 10,
+        ("あ", 4): 10,
+        ("か", 5): 10,
+    }
+    insufficient = [
+        f"{kana}:{length}={counts[(kana, length)]}"
+        for (kana, length), minimum in required_minimums.items()
+        if counts[(kana, length)] < minimum
+    ]
+    if insufficient:
+        raise RuntimeError(f"Dictionary bucket validation failed: {', '.join(insufficient)}")
 
     OUTPUT.parent.mkdir(parents=True, exist_ok=True)
     with OUTPUT.open("w", encoding="utf-8") as file:
@@ -109,11 +133,9 @@ def main() -> int:
             file.write(f"  [{json.dumps(surface, ensure_ascii=False)},{json.dumps(reading, ensure_ascii=False)}],\n")
         file.write("];\n")
 
-    counts: dict[tuple[str, int], int] = defaultdict(int)
-    for _, reading in rows:
-        counts[(reading[0], len(reading))] += 1
     print(f"Scanned {len(entries)} unique entries; generated {len(rows)} balanced entries")
-    print(f"bucket ら/4={counts[(\"ら\", 4)]}, ば/3={counts[(\"ば\", 3)]}")
+    for kana, length in required_minimums:
+        print(f"bucket {kana}/{length}={counts[(kana, length)]}")
     return 0
 
 
