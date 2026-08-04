@@ -1,4 +1,5 @@
 import { extraAnswerWordTuples } from "./word-data-extra";
+import { bulkAnswerWordTuples } from "./word-data-bulk";
 import { generatedWords4 } from "./word-data-4";
 import { generatedWords5 } from "./word-data-5";
 import { generatedWords6 } from "./word-data-6";
@@ -16,7 +17,11 @@ const toWord = ([surface, reading, proper]: Tuple): AnswerWord => ({ surface, re
 const generated = [...generatedWords4, ...generatedWords5, ...generatedWords6, ...generatedWords7, ...generatedWords8];
 
 export const answerWords: AnswerWord[] = Array.from(
-  new Map([...extraAnswerWordTuples, ...generated].map(toWord).map(entry => [`${entry.surface}\u0000${entry.reading}`, entry])).values(),
+  new Map(
+    [...extraAnswerWordTuples, ...bulkAnswerWordTuples, ...generated]
+      .map(toWord)
+      .map(entry => [`${entry.surface}\u0000${entry.reading}`, entry]),
+  ).values(),
 );
 
 const dictionary = new Map<number, Map<string, AnswerWord[]>>();
@@ -43,5 +48,7 @@ function shuffle<T>(items: T[]): T[] {
 export function findAnswerWords(kana: string, length: number): AnswerWord[] {
   const bucket = dictionary.get(length)?.get(kana) ?? [];
   const unique = Array.from(new Map(bucket.map(entry => [`${entry.surface}\u0000${entry.reading}`, entry])).values());
-  return shuffle(unique).sort((a, b) => Number(Boolean(a.proper)) - Number(Boolean(b.proper)));
+  const ordinary = shuffle(unique.filter(entry => !entry.proper));
+  const proper = shuffle(unique.filter(entry => entry.proper));
+  return [...ordinary, ...proper];
 }
