@@ -3,7 +3,7 @@
 import { useEffect } from "react";
 
 const PAGE_SIZE = 30;
-const APP_VERSION = "v1.6.1";
+const APP_VERSION = "v1.6.2";
 const TIMER_STORAGE_KEY = "dosukoi-timer-minutes";
 
 const formatTime = (seconds: number) => {
