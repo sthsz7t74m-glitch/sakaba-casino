@@ -9,7 +9,7 @@ const root = document.getElementById("root");
 
 if (!root) throw new Error("App root was not found");
 
-const APP_VERSION = "v1.4.1";
+const APP_VERSION = "v1.4.2";
 const SCREEN_KEY = "sakaba-current-screen";
 const SCREEN_SLUGS = [
   "chinchiro",
