@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
+import { ensureFormControls } from "./components/FormControls";
 import { ensureGameHeaderVersion } from "./components/GameHeaderVersion";
 import { ensurePartyTip } from "./components/PartyTip";
 import { ensurePrimaryActions } from "./components/PrimaryAction";
@@ -33,6 +34,7 @@ function enhancePage(page: HTMLElement): void {
   ensurePartyTip(page, anchor, content.tip);
   ensurePrimaryActions(page);
   ensureSecondaryActions(page);
+  ensureFormControls(page);
   page.dataset.partyEnhanced = APP_VERSION;
 }
 
