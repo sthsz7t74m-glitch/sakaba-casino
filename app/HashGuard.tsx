@@ -4,16 +4,23 @@ import { useEffect } from "react";
 
 const BROKEN_HASHES = new Set(["#five-second", "#five-seconds"]);
 
-function clearBrokenHash(): void {
+function getCleanUrl(): string {
+  return `${window.location.pathname}${window.location.search}`;
+}
+
+function resetBrokenRoute(): void {
   if (!BROKEN_HASHES.has(window.location.hash.toLowerCase())) return;
-  window.history.replaceState(window.history.state, "", `${window.location.pathname}${window.location.search}`);
+
+  // replaceState only changes the URL and leaves the currently opened game in
+  // React state. A full replace resets the app to its lobby initial state.
+  window.location.replace(getCleanUrl());
 }
 
 export default function HashGuard() {
   useEffect(() => {
-    clearBrokenHash();
+    resetBrokenRoute();
 
-    const onHashChange = () => clearBrokenHash();
+    const onHashChange = () => resetBrokenRoute();
     const onClick = (event: MouseEvent) => {
       const target = event.target as HTMLElement | null;
       const anchor = target?.closest<HTMLAnchorElement>("a[href]");
@@ -23,7 +30,7 @@ export default function HashGuard() {
       if (!href || !BROKEN_HASHES.has(href)) return;
 
       event.preventDefault();
-      clearBrokenHash();
+      window.location.replace(getCleanUrl());
     };
 
     window.addEventListener("hashchange", onHashChange);
