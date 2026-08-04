@@ -6,6 +6,8 @@ on:
     paths-ignore:
       - "docs/**"
   workflow_dispatch:
+  schedule:
+    - cron: "20 18 * * *"
 
 permissions:
   contents: write
@@ -38,6 +40,12 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Generate large Japanese dictionary
+        run: |
+          python3 scripts/generate-japanese-dictionary.py
+          test -s app/word-data-jmdict.generated.ts
+          wc -l app/word-data-jmdict.generated.ts
+
       - name: Build GitHub Pages
         run: npm run build:github
 
@@ -57,6 +65,6 @@ jobs:
             echo "No generated changes"
             exit 0
           fi
-          git commit -m "GitHub Pagesをv1.4.1へ更新"
+          git commit -m "GitHub Pagesを大規模辞書版へ更新"
           git pull --rebase origin main
           git push origin HEAD:main
