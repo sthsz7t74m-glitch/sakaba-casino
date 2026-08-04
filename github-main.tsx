@@ -9,7 +9,7 @@ const root = document.getElementById("root");
 
 if (!root) throw new Error("App root was not found");
 
-const APP_VERSION = "v1.4.2";
+const APP_VERSION = "v1.4.3";
 const SCREEN_KEY = "sakaba-current-screen";
 const SCREEN_SLUGS = [
   "chinchiro",
@@ -107,13 +107,24 @@ function App() {
       window.setTimeout(restoreScreenFromUrl, 0);
     };
 
+    const syncVersionBadge = () => {
+      const badge = document.querySelector<HTMLElement>(".dosukoi-version-badge");
+      if (!badge) return;
+      badge.textContent = APP_VERSION;
+      badge.setAttribute("aria-label", `アプリバージョン ${APP_VERSION}`);
+    };
+
     document.addEventListener("click", rememberScreen, true);
     window.addEventListener("hashchange", restoreScreenFromUrl);
+    const observer = new MutationObserver(syncVersionBadge);
+    observer.observe(document.body, { childList: true, subtree: true });
     restore();
+    syncVersionBadge();
 
     return () => {
       document.removeEventListener("click", rememberScreen, true);
       window.removeEventListener("hashchange", restoreScreenFromUrl);
+      observer.disconnect();
     };
   }, []);
 
