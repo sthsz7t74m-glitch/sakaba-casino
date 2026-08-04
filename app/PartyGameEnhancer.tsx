@@ -24,9 +24,23 @@ function findGameTitle(page: HTMLElement): string {
   return page.querySelector<HTMLElement>(".game-header h1, .game-header h2")?.textContent?.trim() ?? "";
 }
 
+function syncHomeVersion(): void {
+  const version = document.querySelector<HTMLElement>(".lobby footer b");
+  if (version) {
+    version.textContent = `v${APP_VERSION}`;
+    version.dataset.appVersion = APP_VERSION;
+  }
+}
+
+function clearLegacyHash(): void {
+  if (!window.location.hash) return;
+  window.history.replaceState(null, "", `${window.location.pathname}${window.location.search}`);
+}
+
 function enhancePage(page: HTMLElement): void {
   const title = findGameTitle(page);
   if (!title || EXCLUDED_TITLES.has(title) || title.includes("ちんちろ")) return;
+  if (page.dataset.partyEnhanced === APP_VERSION) return;
 
   const content = getPartyGameContent(title);
   if (!content) return;
@@ -46,17 +60,37 @@ function enhancePage(page: HTMLElement): void {
 
 export default function PartyGameEnhancer() {
   useEffect(() => {
+    let frame = 0;
+
     const enhance = () => {
+      frame = 0;
+      clearLegacyHash();
       removeLegacyVersionBadges();
+      syncHomeVersion();
       const page = findGamePage();
       if (page) enhancePage(page);
     };
 
-    const observer = new MutationObserver(enhance);
-    observer.observe(document.body, { childList: true, subtree: true });
-    enhance();
+    const scheduleEnhance = () => {
+      if (frame) window.cancelAnimationFrame(frame);
+      frame = window.requestAnimationFrame(() => {
+        frame = window.requestAnimationFrame(enhance);
+      });
+    };
 
-    return () => observer.disconnect();
+    const onClick = (event: MouseEvent) => {
+      const target = event.target;
+      if (!(target instanceof Element)) return;
+      if (target.closest(".game-card, .back")) scheduleEnhance();
+    };
+
+    document.addEventListener("click", onClick, true);
+    scheduleEnhance();
+
+    return () => {
+      document.removeEventListener("click", onClick, true);
+      if (frame) window.cancelAnimationFrame(frame);
+    };
   }, []);
 
   return null;
