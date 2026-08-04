@@ -1,7 +1,6 @@
 import { useEffect } from "react";
 import { createRoot } from "react-dom/client";
 import Home from "./app/page";
-import GlobalTimer from "./app/GlobalTimer";
 import DosukoiExamplesEnhancer from "./app/DosukoiExamplesEnhancer";
 import "./app/globals.css";
 import "./app/dosukoi-enhancements.css";
@@ -121,7 +120,6 @@ function App() {
   return (
     <>
       <Home />
-      <GlobalTimer />
       <DosukoiExamplesEnhancer />
       <VersionBadge />
     </>
