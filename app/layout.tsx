@@ -5,6 +5,7 @@ import "./party-game-enhancements.css";
 import "./five-seconds-v2.css";
 import DosukoiExamplesEnhancer from "./DosukoiExamplesEnhancer";
 import HashGuard from "./HashGuard";
+import HomeVersionBadge from "./HomeVersionBadge";
 import PartyGameEnhancer from "./PartyGameEnhancer";
 
 export const metadata: Metadata = {
@@ -14,5 +15,5 @@ export const metadata: Metadata = {
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
-  return <html lang="ja"><body>{children}<HashGuard /><DosukoiExamplesEnhancer /><PartyGameEnhancer /></body></html>;
+  return <html lang="ja"><body>{children}<HashGuard /><HomeVersionBadge /><DosukoiExamplesEnhancer /><PartyGameEnhancer /></body></html>;
 }
