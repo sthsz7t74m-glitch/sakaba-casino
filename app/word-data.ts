@@ -1,4 +1,5 @@
 import { DictionaryEngine, type DictionarySource, type DictionaryWord } from "./dictionary-engine";
+import { familiarWordTuples } from "./word-data-familiar";
 import { extraAnswerWordTuples } from "./word-data-extra";
 import { bulkAnswerWordTuples } from "./word-data-bulk";
 import { popCultureWordTuples } from "./word-data-popculture";
@@ -12,15 +13,16 @@ import { generatedWords8 } from "./word-data-8";
 export type AnswerWord = DictionaryWord;
 
 const dictionarySources: readonly DictionarySource[] = [
+  { id: "familiar", words: familiarWordTuples },
   { id: "extra", words: extraAnswerWordTuples },
-  { id: "bulk", words: bulkAnswerWordTuples },
   { id: "pop-culture", words: popCultureWordTuples },
-  { id: "jmdict", words: jmdictWordTuples },
+  { id: "bulk", words: bulkAnswerWordTuples },
   { id: "generated-4", words: generatedWords4 },
   { id: "generated-5", words: generatedWords5 },
   { id: "generated-6", words: generatedWords6 },
   { id: "generated-7", words: generatedWords7 },
   { id: "generated-8", words: generatedWords8 },
+  { id: "jmdict", words: jmdictWordTuples },
 ];
 
 const engine = new DictionaryEngine(dictionarySources);
