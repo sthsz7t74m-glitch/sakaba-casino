@@ -3,40 +3,59 @@
 import { useEffect } from "react";
 import { APP_VERSION } from "./version";
 
-function applyHomeVersion(): void {
+function applyHomeVersion(): boolean {
   const header = document.querySelector<HTMLElement>(".lobby .brand-header");
-  if (header && !header.querySelector("[data-home-version]")) {
-    const badge = document.createElement("span");
+  if (!header) return false;
+
+  let badge = header.querySelector<HTMLElement>("[data-home-version]");
+  if (!badge) {
+    badge = document.createElement("span");
     badge.dataset.homeVersion = "true";
     badge.className = "home-version-badge";
-    badge.textContent = APP_VERSION;
-    badge.setAttribute("aria-label", `アプリバージョン ${APP_VERSION}`);
     header.append(badge);
   }
+  badge.textContent = APP_VERSION;
+  badge.setAttribute("aria-label", `アプリバージョン ${APP_VERSION}`);
 
   const footerVersion = document.querySelector<HTMLElement>(".lobby footer b");
   if (footerVersion) footerVersion.textContent = APP_VERSION;
+  return true;
 }
 
 export default function HomeVersionBadge() {
   useEffect(() => {
-    let frame = 0;
-    const schedule = () => {
-      window.cancelAnimationFrame(frame);
-      frame = window.requestAnimationFrame(applyHomeVersion);
+    let observer: MutationObserver | null = null;
+    let timeout = 0;
+
+    const stopObserver = () => {
+      observer?.disconnect();
+      observer = null;
+      window.clearTimeout(timeout);
+    };
+
+    const ensureBadge = () => {
+      if (applyHomeVersion()) {
+        stopObserver();
+        return;
+      }
+      if (observer) return;
+      observer = new MutationObserver(() => {
+        if (applyHomeVersion()) stopObserver();
+      });
+      observer.observe(document.querySelector("main") ?? document.body, { childList: true, subtree: true });
+      timeout = window.setTimeout(stopObserver, 2000);
     };
 
     const onClick = (event: MouseEvent) => {
       const target = event.target as HTMLElement | null;
-      if (target?.closest(".game-card, .game-header .back")) schedule();
+      if (target?.closest(".game-header .back")) window.requestAnimationFrame(ensureBadge);
     };
 
-    schedule();
+    ensureBadge();
     document.addEventListener("click", onClick, true);
-
     return () => {
-      window.cancelAnimationFrame(frame);
       document.removeEventListener("click", onClick, true);
+      stopObserver();
     };
   }, []);
 
