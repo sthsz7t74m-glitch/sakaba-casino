@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
+import { ensureGameHeaderVersion } from "./components/GameHeaderVersion";
 import { getPartyGameContent } from "./party-games/content";
 import { createElement, removeLegacyVersionBadges } from "./party-games/runtime";
 import { APP_VERSION } from "./version";
@@ -13,15 +14,6 @@ function findGamePage(): HTMLElement | null {
 
 function findGameTitle(page: HTMLElement): string {
   return page.querySelector<HTMLElement>(".game-header h1, .game-header h2")?.textContent?.trim() ?? "";
-}
-
-function addVersionBadge(page: HTMLElement): void {
-  const header = page.querySelector<HTMLElement>(".game-header");
-  if (!header || header.querySelector(".party-version")) return;
-
-  const badge = createElement("span", "party-version", APP_VERSION);
-  badge.setAttribute("aria-label", `アプリバージョン ${APP_VERSION}`);
-  header.appendChild(badge);
 }
 
 function addTip(page: HTMLElement, anchor: HTMLElement, tip?: string): void {
@@ -41,7 +33,7 @@ function enhancePage(page: HTMLElement): void {
   const anchor = page.querySelector<HTMLElement>(".play-card, section");
   if (!anchor) return;
 
-  addVersionBadge(page);
+  ensureGameHeaderVersion(page);
   addTip(page, anchor, content.tip);
   page.dataset.partyEnhanced = APP_VERSION;
 }
