@@ -5,11 +5,7 @@ export type DictionaryWord = {
   source?: string;
 };
 
-export type DictionaryTuple = readonly [
-  surface: string,
-  reading: string,
-  proper?: boolean,
-];
+export type DictionaryTuple = readonly [surface: string, reading: string, proper?: boolean];
 
 export type DictionarySource = {
   id: string;
@@ -30,24 +26,108 @@ const MIN_LENGTH = 3;
 const MAX_LENGTH = 20;
 const READING_PATTERN = /^[ぁ-ゖー]+$/u;
 
+// Smaller is better. Hand-curated/familiar sources are intentionally ahead of
+// mechanically generated dictionary entries.
+const SOURCE_PRIORITY: Readonly<Record<string, number>> = Object.freeze({
+  familiar: 0,
+  extra: 1,
+  "pop-culture": 2,
+  bulk: 3,
+  "generated-4": 4,
+  "generated-5": 4,
+  "generated-6": 4,
+  "generated-7": 4,
+  "generated-8": 4,
+  jmdict: 6,
+});
+
 const normalizeText = (value: string): string => value.normalize("NFKC").trim();
 
 const normalizeReading = (value: string): string =>
   Array.from(normalizeText(value), character => {
     const code = character.codePointAt(0) ?? 0;
-    return code >= 0x30a1 && code <= 0x30f6
-      ? String.fromCodePoint(code - 0x60)
-      : character;
+    return code >= 0x30a1 && code <= 0x30f6 ? String.fromCodePoint(code - 0x60) : character;
   }).join("");
 
 const wordKey = (word: Pick<DictionaryWord, "surface" | "reading">): string =>
   `${word.surface}\u0000${word.reading}`;
+
+const sourcePriority = (word: DictionaryWord): number => SOURCE_PRIORITY[word.source ?? ""] ?? 5;
 
 function shuffle<T>(items: readonly T[]): T[] {
   const result = [...items];
   for (let index = result.length - 1; index > 0; index -= 1) {
     const swapIndex = Math.floor(Math.random() * (index + 1));
     [result[index], result[swapIndex]] = [result[swapIndex], result[index]];
+  }
+  return result;
+}
+
+/**
+ * Prevents results such as けい〜 / けい〜 / けい〜 from filling the first page.
+ * Words are grouped by the first two reading characters and then selected in a
+ * round-robin. The first character is already fixed by the game prompt.
+ */
+function spreadReadingPrefixes(words: readonly DictionaryWord[]): DictionaryWord[] {
+  const groups = new Map<string, DictionaryWord[]>();
+  for (const word of words) {
+    const chars = Array.from(word.reading);
+    const key = chars.slice(0, Math.min(2, chars.length)).join("");
+    const group = groups.get(key) ?? [];
+    group.push(word);
+    groups.set(key, group);
+  }
+
+  const queues = shuffle(
+    [...groups.entries()].map(([key, values]) => ({
+      key,
+      values: shuffle(values).sort((a, b) => sourcePriority(a) - sourcePriority(b)),
+    })),
+  ).sort((a, b) => {
+    const aPriority = Math.min(...a.values.map(sourcePriority));
+    const bPriority = Math.min(...b.values.map(sourcePriority));
+    return aPriority - bPriority;
+  });
+
+  const result: DictionaryWord[] = [];
+  let remaining = queues.reduce((sum, queue) => sum + queue.values.length, 0);
+  while (remaining > 0) {
+    for (const queue of queues) {
+      const next = queue.values.shift();
+      if (!next) continue;
+      result.push(next);
+      remaining -= 1;
+    }
+  }
+  return result;
+}
+
+function balancedFamiliarOrder(bucket: readonly DictionaryWord[]): DictionaryWord[] {
+  const curatedOrdinary = bucket.filter(word => !word.proper && sourcePriority(word) <= 3);
+  const curatedProper = bucket.filter(word => word.proper && sourcePriority(word) <= 2);
+  const generatedOrdinary = bucket.filter(word => !word.proper && sourcePriority(word) > 3);
+  const remainingProper = bucket.filter(word => word.proper && sourcePriority(word) > 2);
+
+  const lanes = [
+    spreadReadingPrefixes(curatedOrdinary),
+    spreadReadingPrefixes(curatedProper),
+    spreadReadingPrefixes(generatedOrdinary),
+    spreadReadingPrefixes(remainingProper),
+  ];
+
+  // The first 30 results are roughly 18 familiar common words, 6 famous proper
+  // nouns/characters and 6 long-tail dictionary words when enough data exists.
+  const pattern = [0, 0, 1, 0, 2, 0, 1, 2, 0, 3];
+  const result: DictionaryWord[] = [];
+  while (lanes.some(lane => lane.length > 0)) {
+    let progressed = false;
+    for (const laneIndex of pattern) {
+      const next = lanes[laneIndex].shift();
+      if (!next) continue;
+      result.push(next);
+      progressed = true;
+    }
+    if (!progressed) break;
   }
   return result;
 }
@@ -82,7 +162,9 @@ export class DictionaryEngine {
         const previous = unique.get(key);
         if (previous) {
           duplicatesRemoved += 1;
-          if (previous.proper && !proper) unique.set(key, word);
+          if (sourcePriority(word) < sourcePriority(previous) || (previous.proper && !proper)) {
+            unique.set(key, word);
+          }
           continue;
         }
         unique.set(key, word);
@@ -92,7 +174,9 @@ export class DictionaryEngine {
     }
 
     this.words = [...unique.values()].sort((a, b) =>
-      a.reading.localeCompare(b.reading, "ja") || a.surface.localeCompare(b.surface, "ja"),
+      sourcePriority(a) - sourcePriority(b) ||
+      a.reading.localeCompare(b.reading, "ja") ||
+      a.surface.localeCompare(b.surface, "ja"),
     );
 
     const lengthCounts: Record<number, number> = {};
@@ -123,9 +207,7 @@ export class DictionaryEngine {
     if (length < MIN_LENGTH || length > MAX_LENGTH || !normalizedKana) return [];
 
     const bucket = this.buckets.get(length)?.get(Array.from(normalizedKana)[0]) ?? [];
-    const ordinary = shuffle(bucket.filter(word => !word.proper));
-    const proper = shuffle(bucket.filter(word => word.proper));
-    const result = [...ordinary, ...proper];
+    const result = balancedFamiliarOrder(bucket);
     return typeof limit === "number" ? result.slice(0, Math.max(0, limit)) : result;
   }
 
