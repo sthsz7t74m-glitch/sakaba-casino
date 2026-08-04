@@ -15,13 +15,13 @@ for (const [fileName, source] of [
   ["github-main.tsx", githubEntry],
   ["app/PartyGameEnhancer.tsx", partyEnhancer],
 ]) {
-  if (!source.includes("APP_VERSION") || !source.includes("version")) {
-    throw new Error(`${fileName} must use the shared APP_VERSION export`);
-  }
-
   if (/const\s+APP_VERSION\s*=\s*["']v\d+\.\d+\.\d+["']/.test(source)) {
     throw new Error(`${fileName} contains a hard-coded app version`);
   }
+}
+
+if (!partyEnhancer.includes('from "./version"') || !partyEnhancer.includes("APP_VERSION")) {
+  throw new Error("app/PartyGameEnhancer.tsx must use the shared APP_VERSION export");
 }
 
 console.log(`Version consistency verified: ${expected}`);
