@@ -3,9 +3,7 @@ export type GeneratedWordTuple = readonly [surface: string, reading: string, pro
 const heads = ["あ","い","う","え","お","か","き","く","け","こ","さ","し","す","せ","そ","た","ち","つ","て","と","な","に","ぬ","ね","の","は","ひ","ふ","へ","ほ","ま","み","む","め","も","や","ゆ","よ","ら","り","る","れ","ろ","わ","が","ぎ","ぐ","げ","ご","ざ","じ","ず","ぜ","ぞ","だ","で","ど","ば","び","ぶ","べ","ぼ","ぱ","ぴ","ぷ","ぺ","ぽ"];
 const syllables = ["あ","い","う","え","お","か","き","く","け","こ","さ","し","す","せ","そ","た","ち","つ","て","と","な","に","ぬ","ね","の","は","ひ","ふ","へ","ほ","ま","み","む","め","も","や","ゆ","よ","ら","り","る","れ","ろ","わ","ん"];
 
-// 文字数×頭文字の各区画に十分な候補を持たせるための補助辞書。
-// 既存の手作業語彙を優先表示し、こちらは候補不足時の補完として利用する。
-export function makeGeneratedWords(length: number, perHead = 110): GeneratedWordTuple[] {
+export function makeGeneratedWords(length: number, perHead = 28): GeneratedWordTuple[] {
   const result: GeneratedWordTuple[] = [];
   for (const head of heads) {
     const seen = new Set<string>();
