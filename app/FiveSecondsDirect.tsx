@@ -110,34 +110,58 @@ export default function FiveSecondsDirect() {
   useEffect(() => {
     let root: Root | null = null;
     let page: HTMLElement | null = null;
+    let observer: MutationObserver | null = null;
+    let observerTimeout = 0;
 
     const unmount = () => {
+      observer?.disconnect(); observer = null;
+      window.clearTimeout(observerTimeout);
       root?.unmount(); root = null;
       page?.querySelector<HTMLElement>("[data-five-seconds-direct]")?.remove();
       page?.querySelectorAll<HTMLElement>(":scope > .play-card").forEach((card) => { card.hidden = false; });
       page = null;
     };
 
-    const mount = () => {
+    const mount = (): boolean => {
       const target = findFiveSecondsPage();
-      if (!target || target === page) return;
-      unmount(); page = target;
+      if (!target) return false;
+      if (target === page && root) return true;
+
+      unmount();
+      page = target;
       target.querySelectorAll<HTMLElement>(":scope > .play-card").forEach((card) => { card.hidden = true; });
-      const host = document.createElement("div"); host.dataset.fiveSecondsDirect = "true"; target.append(host);
-      root = createRoot(host); root.render(<FiveSecondsGame />);
+      const host = document.createElement("div");
+      host.dataset.fiveSecondsDirect = "true";
+      target.append(host);
+      root = createRoot(host);
+      root.render(<FiveSecondsGame />);
+      return true;
     };
 
-    const scheduleMount = () => { window.setTimeout(mount, 0); window.setTimeout(mount, 80); };
+    const waitForPageAndMount = () => {
+      if (mount()) return;
+      observer?.disconnect();
+      observer = new MutationObserver(() => {
+        if (mount()) observer?.disconnect();
+      });
+      observer.observe(document.querySelector("main") ?? document.body, { childList: true, subtree: true });
+      observerTimeout = window.setTimeout(() => observer?.disconnect(), 2000);
+    };
+
     const onClick = (event: MouseEvent) => {
       const target = event.target as HTMLElement | null;
       const card = target?.closest<HTMLButtonElement>(".game-card");
-      if (card?.textContent?.includes("5秒ぴったり")) { scheduleMount(); return; }
+      if (card?.textContent?.includes("5秒ぴったり")) {
+        window.requestAnimationFrame(waitForPageAndMount);
+        return;
+      }
       if (target?.closest(".game-header .back")) window.setTimeout(unmount, 0);
     };
 
     document.addEventListener("click", onClick, true);
-    mount();
+    waitForPageAndMount();
     return () => { document.removeEventListener("click", onClick, true); unmount(); };
   }, []);
+
   return null;
 }
