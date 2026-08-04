@@ -2,7 +2,7 @@
 
 import { useEffect } from "react";
 import { getPartyGameContent } from "./party-games/content";
-import { createElement, pickDifferent, removeLegacyVersionBadges, vibrate } from "./party-games/runtime";
+import { createElement, removeLegacyVersionBadges } from "./party-games/runtime";
 import { APP_VERSION } from "./version";
 
 const EXCLUDED_TITLES = new Set(["どすこい"]);
@@ -18,7 +18,10 @@ function findGameTitle(page: HTMLElement): string {
 function addVersionBadge(page: HTMLElement): void {
   const header = page.querySelector<HTMLElement>(".game-header");
   if (!header || header.querySelector(".party-version")) return;
-  header.appendChild(createElement("span", "party-version", APP_VERSION));
+
+  const badge = createElement("span", "party-version", APP_VERSION);
+  badge.setAttribute("aria-label", `アプリバージョン ${APP_VERSION}`);
+  header.appendChild(badge);
 }
 
 function addTip(page: HTMLElement, anchor: HTMLElement, tip?: string): void {
@@ -26,35 +29,6 @@ function addTip(page: HTMLElement, anchor: HTMLElement, tip?: string): void {
   const box = createElement("aside", "party-tip");
   box.append(createElement("b", undefined, "盛り上がるコツ"), createElement("span", undefined, tip));
   anchor.before(box);
-}
-
-function addPromptPanel(page: HTMLElement, anchor: HTMLElement, prompts: readonly string[]): void {
-  if (prompts.length === 0 || page.querySelector(".party-extra-panel")) return;
-
-  const panel = createElement("section", "party-extra-panel");
-  const heading = createElement("div", "party-extra-heading");
-  const headingCopy = createElement("div");
-  headingCopy.append(createElement("small", undefined, "EXTRA PACK"), createElement("b", undefined, "追加お題パック"));
-  heading.append(headingCopy, createElement("span", undefined, `${prompts.length}問`));
-
-  const display = createElement("div", "party-extra-prompt", "追加お題を引いてみよう");
-  display.setAttribute("aria-live", "polite");
-  const button = createElement("button", "party-extra-draw", "追加お題を抽選");
-  button.type = "button";
-
-  let previous: string | undefined;
-  button.addEventListener("click", () => {
-    const next = pickDifferent(prompts, previous);
-    if (!next) return;
-    previous = next;
-    display.textContent = next;
-    panel.classList.remove("is-pop");
-    window.requestAnimationFrame(() => panel.classList.add("is-pop"));
-    vibrate();
-  });
-
-  panel.append(heading, display, button);
-  anchor.after(panel);
 }
 
 function enhancePage(page: HTMLElement): void {
@@ -69,7 +43,6 @@ function enhancePage(page: HTMLElement): void {
 
   addVersionBadge(page);
   addTip(page, anchor, content.tip);
-  addPromptPanel(page, anchor, content.prompts);
   page.dataset.partyEnhanced = APP_VERSION;
 }
 

@@ -3,7 +3,6 @@ import { createRoot } from "react-dom/client";
 import Home from "./app/page";
 import DosukoiExamplesEnhancer from "./app/DosukoiExamplesEnhancer";
 import PartyGameEnhancer from "./app/PartyGameEnhancer";
-import { APP_VERSION } from "./app/version";
 import "./app/globals.css";
 import "./app/dosukoi-enhancements.css";
 import "./app/party-game-enhancements.css";
@@ -74,38 +73,6 @@ function restoreScreenOnce(slug: ScreenSlug, signal: AbortSignal) {
   attempt();
 }
 
-function VersionBadge() {
-  return (
-    <>
-      <div className="app-version" aria-label={`アプリバージョン ${APP_VERSION}`}>
-        {APP_VERSION}
-      </div>
-      <style>{`
-        .app-version {
-          position: fixed;
-          z-index: 1200;
-          right: max(10px, env(safe-area-inset-right));
-          bottom: max(10px, env(safe-area-inset-bottom));
-          padding: 5px 9px;
-          border: 1px solid rgba(41, 50, 77, .12);
-          border-radius: 999px;
-          color: #6f7893;
-          background: rgba(255, 255, 255, .9);
-          box-shadow: 0 3px 10px rgba(41, 50, 77, .1);
-          font-size: 10px;
-          font-weight: 900;
-          line-height: 1;
-          letter-spacing: .04em;
-          pointer-events: none;
-          backdrop-filter: blur(8px);
-          -webkit-backdrop-filter: blur(8px);
-        }
-        body:has(.dosukoi-page) .app-version { display: none; }
-      `}</style>
-    </>
-  );
-}
-
 function App() {
   useEffect(() => {
     const controller = new AbortController();
@@ -167,7 +134,6 @@ function App() {
       <Home />
       <DosukoiExamplesEnhancer />
       <PartyGameEnhancer />
-      <VersionBadge />
     </>
   );
 }

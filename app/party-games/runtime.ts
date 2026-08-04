@@ -18,8 +18,8 @@ export function createElement<K extends keyof HTMLElementTagNameMap>(
 }
 
 export function removeLegacyVersionBadges(): void {
-  document.querySelectorAll<HTMLElement>("footer b, .dosukoi-version-badge").forEach(element => {
-    if (/^v1\.[0-6]\./.test(element.textContent?.trim() ?? "")) element.remove();
+  document.querySelectorAll<HTMLElement>("footer b, .app-version").forEach(element => {
+    if (/^v1\./.test(element.textContent?.trim() ?? "")) element.remove();
   });
 }
 
