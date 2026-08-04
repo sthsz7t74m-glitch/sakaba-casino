@@ -2,13 +2,15 @@ import { useEffect } from "react";
 import { createRoot } from "react-dom/client";
 import Home from "./app/page";
 import GlobalTimer from "./app/GlobalTimer";
+import DosukoiExamplesEnhancer from "./app/DosukoiExamplesEnhancer";
 import "./app/globals.css";
+import "./app/dosukoi-enhancements.css";
 
 const root = document.getElementById("root");
 
 if (!root) throw new Error("App root was not found");
 
-const APP_VERSION = "v1.3.0";
+const APP_VERSION = "v1.4.1";
 const SCREEN_KEY = "sakaba-current-screen";
 const SCREEN_SLUGS = [
   "chinchiro",
@@ -67,6 +69,9 @@ function VersionBadge() {
           backdrop-filter: blur(8px);
           -webkit-backdrop-filter: blur(8px);
         }
+        body:has(.dosukoi-page) .app-version {
+          display: none;
+        }
       `}</style>
     </>
   );
@@ -117,6 +122,7 @@ function App() {
     <>
       <Home />
       <GlobalTimer />
+      <DosukoiExamplesEnhancer />
       <VersionBadge />
     </>
   );
