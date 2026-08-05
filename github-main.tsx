@@ -15,7 +15,7 @@ import "./app/five-seconds-compact.css";
 const root = document.getElementById("root");
 if (!root) throw new Error("App root was not found");
 
-const SCREEN_KEY = "sakaba-current-screen";
+const BASE_PATH = "/sakaba-casino/";
 const SCREEN_SLUGS = [
   "chinchiro",
   "classic-chinchiro",
@@ -43,14 +43,15 @@ function isScreenSlug(value: string): value is ScreenSlug {
   return SCREEN_SLUGS.includes(value as ScreenSlug);
 }
 
-function getHashSlug(): ScreenSlug | null {
-  const value = window.location.hash.replace(/^#/, "");
-  return isScreenSlug(value) ? value : null;
+function getPathSlug(): ScreenSlug | null {
+  const relativePath = window.location.pathname
+    .replace(/^\/sakaba-casino\/?/, "")
+    .replace(/^\/+|\/+$/g, "");
+  return isScreenSlug(relativePath) ? relativePath : null;
 }
 
-function getSavedSlug(): ScreenSlug | null {
-  const value = localStorage.getItem(SCREEN_KEY) ?? "";
-  return isScreenSlug(value) ? value : null;
+function gamePath(slug: ScreenSlug): string {
+  return `${BASE_PATH}${slug}/`;
 }
 
 function getGameCards(): HTMLButtonElement[] {
@@ -58,23 +59,18 @@ function getGameCards(): HTMLButtonElement[] {
 }
 
 function openScreen(slug: ScreenSlug): boolean {
-  const index = SCREEN_SLUGS.indexOf(slug);
-  const card = getGameCards()[index];
+  const card = getGameCards()[SCREEN_SLUGS.indexOf(slug)];
   if (!card) return false;
   card.click();
   return true;
 }
 
-function restoreScreenOnce(slug: ScreenSlug, signal: AbortSignal) {
+function openScreenWhenReady(slug: ScreenSlug, signal: AbortSignal) {
   const startedAt = performance.now();
-
   const attempt = () => {
-    if (signal.aborted) return;
-    if (openScreen(slug)) return;
-    if (performance.now() - startedAt >= 5000) return;
-    window.requestAnimationFrame(attempt);
+    if (signal.aborted || openScreen(slug)) return;
+    if (performance.now() - startedAt < 5000) window.requestAnimationFrame(attempt);
   };
-
   attempt();
 }
 
@@ -86,51 +82,50 @@ function App() {
     const restore = (slug: ScreenSlug | null) => {
       if (!slug) return;
       restoring = true;
-      restoreScreenOnce(slug, controller.signal);
-      window.setTimeout(() => {
-        restoring = false;
-      }, 250);
+      openScreenWhenReady(slug, controller.signal);
+      window.setTimeout(() => { restoring = false; }, 300);
     };
 
-    const initialSlug = getHashSlug() ?? getSavedSlug();
-    if (initialSlug) {
-      if (!window.location.hash) history.replaceState(null, "", `#${initialSlug}`);
-      restore(initialSlug);
+    const oldHash = window.location.hash.replace(/^#/, "");
+    if (isScreenSlug(oldHash)) {
+      history.replaceState(null, "", gamePath(oldHash));
     }
+    restore(getPathSlug());
 
-    const rememberScreen = (event: MouseEvent) => {
+    const handleClick = (event: MouseEvent) => {
       if (restoring) return;
       const button = (event.target as HTMLElement | null)?.closest<HTMLButtonElement>("button");
       if (!button) return;
 
       if (button.classList.contains("back")) {
-        localStorage.removeItem(SCREEN_KEY);
-        history.replaceState(null, "", window.location.pathname + window.location.search);
+        if (window.location.pathname !== BASE_PATH) history.pushState(null, "", BASE_PATH);
         return;
       }
 
       if (!button.classList.contains("game-card")) return;
-      const index = getGameCards().indexOf(button);
-      const slug = SCREEN_SLUGS[index];
-      if (!slug) return;
-      localStorage.setItem(SCREEN_KEY, slug);
-      history.replaceState(null, "", `#${slug}`);
+      const slug = SCREEN_SLUGS[getGameCards().indexOf(button)];
+      if (slug && window.location.pathname !== gamePath(slug)) {
+        history.pushState(null, "", gamePath(slug));
+      }
     };
 
-    const handleHashChange = () => {
-      const slug = getHashSlug();
-      if (!slug) return;
-      localStorage.setItem(SCREEN_KEY, slug);
-      restore(slug);
+    const handlePopState = () => {
+      const slug = getPathSlug();
+      if (slug) {
+        restore(slug);
+        return;
+      }
+      const backButton = document.querySelector<HTMLButtonElement>(".game-page .game-header .back, .five-v2-header .back");
+      backButton?.click();
     };
 
-    document.addEventListener("click", rememberScreen, true);
-    window.addEventListener("hashchange", handleHashChange);
+    document.addEventListener("click", handleClick, true);
+    window.addEventListener("popstate", handlePopState);
 
     return () => {
       controller.abort();
-      document.removeEventListener("click", rememberScreen, true);
-      window.removeEventListener("hashchange", handleHashChange);
+      document.removeEventListener("click", handleClick, true);
+      window.removeEventListener("popstate", handlePopState);
     };
   }, []);
 
