@@ -24,7 +24,7 @@ function makeRoundTargets(rounds: number, mode: TimeMode): number[] {
   return Array.from({ length: rounds }, () => mode === "random" ? Math.floor(Math.random() * 9) + 3 : mode);
 }
 
-function FiveSecondsGame() {
+function FiveSecondsGame({ onBack }: { onBack: () => void }) {
   const [phase, setPhase] = useState<Phase>("setup");
   const [playerCount, setPlayerCount] = useState(4);
   const [roundCount, setRoundCount] = useState(3);
@@ -62,106 +62,79 @@ function FiveSecondsGame() {
     if (roundIndex + 1 >= roundCount) { setPhase("final"); return; }
     setRoundIndex((current) => current + 1); setPlayerIndex(0); setLatest(null); setPhase("turn");
   };
-  const resetToSetup = () => { setPhase("setup"); setAttempts([]); setLatest(null); };
 
-  return <section className="five-v2-shell" aria-live="polite">
-    {phase === "setup" && <div className="five-v2-card five-v2-setup">
-      <div className="five-v2-intro"><span>⏱️</span><div><p>みんなで体内時計バトル</p><h2>ゲーム設定</h2></div></div>
-      <div className="five-v2-options">
-        <label><span>参加人数</span><select value={playerCount} onChange={(event) => setPlayerCount(Number(event.target.value))}>{PLAYER_OPTIONS.map((value) => <option key={value} value={value}>{value}人</option>)}</select></label>
-        <label><span>ラウンド</span><select value={roundCount} onChange={(event) => setRoundCount(Number(event.target.value))}>{ROUND_OPTIONS.map((value) => <option key={value} value={value}>{value}R</option>)}</select></label>
-      </div>
-      <fieldset className="five-v2-mode"><legend>目標時間</legend><div>{TIME_OPTIONS.map((value) => <button key={value} type="button" className={timeMode === value ? "is-active" : ""} onClick={() => setTimeMode(value)}>{value === "random" ? "ランダム" : `${value}秒`}</button>)}</div></fieldset>
-      <div className="five-v2-names"><p>プレイヤー名</p>{activeNames.map((name, index) => <label key={index}><span>{index + 1}</span><input value={name} maxLength={12} aria-label={`${index + 1}人目の名前`} onChange={(event) => setNames((current) => current.map((item, itemIndex) => itemIndex === index ? event.target.value : item))} /></label>)}</div>
-      <div className="five-v2-summary"><span>{playerCount}人</span><span>{roundCount}ラウンド</span><span>{timeMode === "random" ? "3〜11秒" : `${timeMode}秒`}</span></div>
-      <button className="primary five-v2-main" type="button" onClick={startGame}>ゲーム開始</button>
-    </div>}
-    {phase === "turn" && <div className="five-v2-card five-v2-turn">
-      <div className="five-v2-progress"><span>ROUND {roundIndex + 1} / {roundCount}</span><span>{playerIndex + 1} / {playerCount}</span></div>
-      <p className="five-v2-label">次はこの人</p><h2>{activeNames[playerIndex]}さん</h2>
-      <div className="five-v2-target"><small>目標</small><strong>{target}</strong><span>秒</span></div>
-      <p>準備ができたらスタート。時間は表示されません。</p>
-      <button className="primary five-v2-main" type="button" onClick={startAttempt}>スタート</button>
-    </div>}
-    {phase === "running" && <button className="five-v2-stop" type="button" onClick={stopAttempt} aria-label="計測を止める"><span>ROUND {roundIndex + 1}</span><small>{activeNames[playerIndex]}さん</small><strong>STOP</strong><p>{target}秒だと思ったらタップ！</p></button>}
-    {phase === "result" && latest && <div className="five-v2-card five-v2-result">
-      <p className="five-v2-label">{activeNames[playerIndex]}さんの記録</p><div className="five-v2-rank">{rankFor(latest.error)}</div>
-      <strong className="five-v2-time">{latest.elapsed.toFixed(2)}<small>秒</small></strong>
-      <div className="five-v2-error"><span>目標 {latest.target.toFixed(0)}秒</span><b>誤差 {latest.error.toFixed(2)}秒</b></div>
-      <button className="primary five-v2-main" type="button" onClick={continueGame}>{playerIndex + 1 < playerCount ? `次は ${activeNames[playerIndex + 1]}さん` : "ラウンド結果を見る"}</button>
-    </div>}
-    {phase === "round" && <div className="five-v2-card"><p className="five-v2-label">ROUND {roundIndex + 1} 終了</p><h2>現在順位</h2>
-      <div className="five-v2-ranking">{standings.map((player, index) => <div key={player.index} className={index === 0 ? "is-leader" : ""}><b>{index + 1}</b><span>{player.name}<small>{player.records.length}回終了</small></span><strong>{player.totalError.toFixed(2)}秒</strong></div>)}</div>
-      <button className="primary five-v2-main" type="button" onClick={nextRound}>{roundIndex + 1 >= roundCount ? "最終結果へ" : `ROUND ${roundIndex + 2}へ`}</button>
-    </div>}
-    {phase === "final" && <div className="five-v2-card five-v2-final"><p className="five-v2-label">FINAL RESULT</p><div className="five-v2-trophy">🏆</div><h2>{standings[0]?.name}</h2><p>優勝！ 合計誤差 <b>{standings[0]?.totalError.toFixed(2)}秒</b></p>
-      <div className="five-v2-podium">{standings.slice(0, 3).map((player, index) => <div key={player.index}><b>{["🥇", "🥈", "🥉"][index]}</b><span>{player.name}</span><small>{player.totalError.toFixed(2)}秒</small></div>)}</div>
-      <div className="five-v2-history">{standings.map((player) => <details key={player.index}><summary><span>{player.name}</span><b>{player.totalError.toFixed(2)}秒</b></summary>{player.records.map((record) => <p key={record.round}>R{record.round + 1}：{record.elapsed.toFixed(2)}秒 <small>（誤差 {record.error.toFixed(2)}）</small></p>)}</details>)}</div>
-      <button className="primary five-v2-main" type="button" onClick={startGame}>同じ設定でもう一度</button><button className="secondary" type="button" onClick={resetToSetup}>設定を変更</button>
-    </div>}
-  </section>;
+  return <div className="five-v2-page">
+    <header className="game-header five-v2-header">
+      <button className="back" type="button" onClick={onBack} aria-label="ホームへ戻る">‹</button>
+      <div><small>JUST FIVE</small><h1>5秒ぴったり</h1></div><span>⏱️</span>
+    </header>
+    <section className="five-v2-shell" aria-live="polite">
+      {phase === "setup" && <div className="five-v2-card five-v2-setup">
+        <div className="five-v2-intro"><span>⏱️</span><div><p>みんなで体内時計バトル</p><h2>ゲーム設定</h2></div></div>
+        <div className="five-v2-options">
+          <label><span>参加人数</span><select value={playerCount} onChange={(event) => setPlayerCount(Number(event.target.value))}>{PLAYER_OPTIONS.map((value) => <option key={value} value={value}>{value}人</option>)}</select></label>
+          <label><span>ラウンド</span><select value={roundCount} onChange={(event) => setRoundCount(Number(event.target.value))}>{ROUND_OPTIONS.map((value) => <option key={value} value={value}>{value}R</option>)}</select></label>
+        </div>
+        <fieldset className="five-v2-mode"><legend>目標時間</legend><div>{TIME_OPTIONS.map((value) => <button key={value} type="button" className={timeMode === value ? "is-active" : ""} onClick={() => setTimeMode(value)}>{value === "random" ? "ランダム" : `${value}秒`}</button>)}</div></fieldset>
+        <div className="five-v2-names"><p>プレイヤー名</p>{activeNames.map((name, index) => <label key={index}><span>{index + 1}</span><input value={name} maxLength={12} onChange={(event) => setNames((current) => current.map((item, itemIndex) => itemIndex === index ? event.target.value : item))} /></label>)}</div>
+        <div className="five-v2-summary"><span>{playerCount}人</span><span>{roundCount}ラウンド</span><span>{timeMode === "random" ? "3〜11秒" : `${timeMode}秒`}</span></div>
+        <button className="primary five-v2-main" type="button" onClick={startGame}>ゲーム開始</button>
+      </div>}
+      {phase === "turn" && <div className="five-v2-card five-v2-turn"><div className="five-v2-progress"><span>ROUND {roundIndex + 1} / {roundCount}</span><span>{playerIndex + 1} / {playerCount}</span></div><p className="five-v2-label">次はこの人</p><h2>{activeNames[playerIndex]}さん</h2><div className="five-v2-target"><small>目標</small><strong>{target}</strong><span>秒</span></div><p>準備ができたらスタート。時間は表示されません。</p><button className="primary five-v2-main" type="button" onClick={startAttempt}>スタート</button></div>}
+      {phase === "running" && <button className="five-v2-stop" type="button" onClick={stopAttempt}><span>ROUND {roundIndex + 1}</span><small>{activeNames[playerIndex]}さん</small><strong>STOP</strong><p>{target}秒だと思ったらタップ！</p></button>}
+      {phase === "result" && latest && <div className="five-v2-card five-v2-result"><p className="five-v2-label">{activeNames[playerIndex]}さんの記録</p><div className="five-v2-rank">{rankFor(latest.error)}</div><strong className="five-v2-time">{latest.elapsed.toFixed(2)}<small>秒</small></strong><div className="five-v2-error"><span>目標 {latest.target.toFixed(0)}秒</span><b>誤差 {latest.error.toFixed(2)}秒</b></div><button className="primary five-v2-main" type="button" onClick={continueGame}>{playerIndex + 1 < playerCount ? `次は ${activeNames[playerIndex + 1]}さん` : "ラウンド結果を見る"}</button></div>}
+      {phase === "round" && <div className="five-v2-card"><p className="five-v2-label">ROUND {roundIndex + 1} 終了</p><h2>現在順位</h2><div className="five-v2-ranking">{standings.map((player, index) => <div key={player.index} className={index === 0 ? "is-leader" : ""}><b>{index + 1}</b><span>{player.name}<small>{player.records.length}回終了</small></span><strong>{player.totalError.toFixed(2)}秒</strong></div>)}</div><button className="primary five-v2-main" type="button" onClick={nextRound}>{roundIndex + 1 >= roundCount ? "最終結果へ" : `ROUND ${roundIndex + 2}へ`}</button></div>}
+      {phase === "final" && <div className="five-v2-card five-v2-final"><p className="five-v2-label">FINAL RESULT</p><div className="five-v2-trophy">🏆</div><h2>{standings[0]?.name}</h2><p>優勝！ 合計誤差 <b>{standings[0]?.totalError.toFixed(2)}秒</b></p><div className="five-v2-podium">{standings.slice(0, 3).map((player, index) => <div key={player.index}><b>{["🥇", "🥈", "🥉"][index]}</b><span>{player.name}</span><small>{player.totalError.toFixed(2)}秒</small></div>)}</div><div className="five-v2-history">{standings.map((player) => <details key={player.index}><summary><span>{player.name}</span><b>{player.totalError.toFixed(2)}秒</b></summary>{player.records.map((record) => <p key={record.round}>R{record.round + 1}：{record.elapsed.toFixed(2)}秒 <small>（誤差 {record.error.toFixed(2)}）</small></p>)}</details>)}</div><button className="primary five-v2-main" type="button" onClick={startGame}>同じ設定でもう一度</button><button className="secondary" type="button" onClick={() => { setPhase("setup"); setAttempts([]); }}>設定を変更</button></div>}
+    </section>
+  </div>;
 }
 
-function findFiveSecondsPage(): HTMLElement | null {
-  return Array.from(document.querySelectorAll<HTMLElement>(".game-page")).find((page) => page.querySelector(".game-header h1, .game-header h2")?.textContent?.trim() === "5秒ぴったり") ?? null;
+function isFiveSecondsScreen(): boolean {
+  return Array.from(document.querySelectorAll<HTMLElement>(".game-page")).some((page) => page.textContent?.includes("5秒ぴったり"));
 }
 
 export default function FiveSecondsDirect() {
   useEffect(() => {
     let root: Root | null = null;
-    let page: HTMLElement | null = null;
-    let observer: MutationObserver | null = null;
-    let observerTimeout = 0;
+    let host: HTMLElement | null = null;
+    let scheduled = false;
 
-    const unmount = () => {
-      observer?.disconnect(); observer = null;
-      window.clearTimeout(observerTimeout);
+    const close = () => {
       root?.unmount(); root = null;
-      page?.querySelector<HTMLElement>("[data-five-seconds-direct]")?.remove();
-      page?.querySelectorAll<HTMLElement>(":scope > .play-card").forEach((card) => { card.hidden = false; });
-      page = null;
+      host?.remove(); host = null;
+      document.documentElement.classList.remove("five-v2-open");
     };
 
-    const mount = (): boolean => {
-      const target = findFiveSecondsPage();
-      if (!target) return false;
-      if (target === page && root) return true;
-
-      unmount();
-      page = target;
-      target.querySelectorAll<HTMLElement>(":scope > .play-card").forEach((card) => { card.hidden = true; });
-      const host = document.createElement("div");
-      host.dataset.fiveSecondsDirect = "true";
-      target.append(host);
+    const open = () => {
+      if (!isFiveSecondsScreen() || root) return;
+      host = document.createElement("div");
+      host.dataset.fiveSecondsOverlay = "true";
+      document.body.append(host);
+      document.documentElement.classList.add("five-v2-open");
       root = createRoot(host);
-      root.render(<FiveSecondsGame />);
-      return true;
+      root.render(<FiveSecondsGame onBack={() => {
+        const legacyBack = document.querySelector<HTMLButtonElement>(".game-page .game-header .back");
+        close();
+        legacyBack?.click();
+      }} />);
     };
 
-    const waitForPageAndMount = () => {
-      if (mount()) return;
-      observer?.disconnect();
-      observer = new MutationObserver(() => {
-        if (mount()) observer?.disconnect();
-      });
-      observer.observe(document.querySelector("main") ?? document.body, { childList: true, subtree: true });
-      observerTimeout = window.setTimeout(() => observer?.disconnect(), 2000);
-    };
+    const scan = () => { scheduled = false; if (isFiveSecondsScreen()) open(); else close(); };
+    const schedule = () => { if (!scheduled) { scheduled = true; window.requestAnimationFrame(scan); } };
+    const observer = new MutationObserver(schedule);
+    observer.observe(document.body, { childList: true, subtree: true });
+    document.addEventListener("click", schedule, true);
+    schedule();
 
-    const onClick = (event: MouseEvent) => {
-      const target = event.target as HTMLElement | null;
-      const card = target?.closest<HTMLButtonElement>(".game-card");
-      if (card?.textContent?.includes("5秒ぴったり")) {
-        window.requestAnimationFrame(waitForPageAndMount);
-        return;
-      }
-      if (target?.closest(".game-header .back")) window.setTimeout(unmount, 0);
-    };
-
-    document.addEventListener("click", onClick, true);
-    waitForPageAndMount();
-    return () => { document.removeEventListener("click", onClick, true); unmount(); };
+    return () => { observer.disconnect(); document.removeEventListener("click", schedule, true); close(); };
   }, []);
-
-  return null;
+  return <style>{`
+    html.five-v2-open, html.five-v2-open body { overflow: hidden !important; }
+    [data-five-seconds-overlay] { position: fixed; inset: 0; z-index: 99999; overflow-y: auto; background: #fff8e8; }
+    .five-v2-page { min-height: 100%; padding: max(22px, env(safe-area-inset-top)) 0 50px; background: radial-gradient(circle at 5% 12%,#ffd654 0 12%,transparent 13%),radial-gradient(circle at 96% 17%,#67d9cb 0 13%,transparent 14%),linear-gradient(180deg,#fff9e9,#faf6ff); }
+    .five-v2-header { width: min(calc(100% - 32px),760px); margin: 0 auto 28px; }
+    .five-v2-header>div { text-align:center; }
+    .five-v2-header small { color:#735bdc;font-weight:900;letter-spacing:.16em; }
+    .five-v2-header h1 { margin:2px 0 0; }
+  `}</style>;
 }
