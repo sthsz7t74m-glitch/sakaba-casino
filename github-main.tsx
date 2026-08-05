@@ -3,6 +3,7 @@ import { createRoot } from "react-dom/client";
 import Home from "./app/page";
 import DosukoiExamplesEnhancer from "./app/DosukoiExamplesEnhancer";
 import FiveSecondsGame from "./app/FiveSecondsGame";
+import FiveSecondsVersionBadge from "./app/FiveSecondsVersionBadge";
 import HomeVersionBadge from "./app/HomeVersionBadge";
 import PartyGameEnhancer from "./app/PartyGameEnhancer";
 import "./app/globals.css";
@@ -139,6 +140,7 @@ function App() {
       <DosukoiExamplesEnhancer />
       <PartyGameEnhancer />
       <FiveSecondsGame />
+      <FiveSecondsVersionBadge />
     </>
   );
 }
