@@ -2,8 +2,7 @@ import { useEffect } from "react";
 import { createRoot } from "react-dom/client";
 import Home from "./app/page";
 import DosukoiExamplesEnhancer from "./app/DosukoiExamplesEnhancer";
-import FiveSecondsGame from "./app/FiveSecondsGame";
-import FiveSecondsVersionBadge from "./app/FiveSecondsVersionBadge";
+import FiveSecondsRoute from "./app/FiveSecondsRoute";
 import HomeVersionBadge from "./app/HomeVersionBadge";
 import PartyGameEnhancer from "./app/PartyGameEnhancer";
 import "./app/globals.css";
@@ -58,7 +57,7 @@ function getGameCards(): HTMLButtonElement[] {
   return Array.from(document.querySelectorAll<HTMLButtonElement>("button.game-card"));
 }
 
-function App() {
+function HomeApp() {
   useEffect(() => {
     const controller = new AbortController();
     let internalOpen = false;
@@ -70,7 +69,7 @@ function App() {
     }
 
     const initialSlug = getPathSlug();
-    if (initialSlug) {
+    if (initialSlug && initialSlug !== "five-seconds") {
       const startedAt = performance.now();
       const openInitialScreen = () => {
         if (controller.signal.aborted) return;
@@ -124,10 +123,9 @@ function App() {
       <HomeVersionBadge />
       <DosukoiExamplesEnhancer />
       <PartyGameEnhancer />
-      <FiveSecondsGame />
-      <FiveSecondsVersionBadge />
     </>
   );
 }
 
-createRoot(root).render(<App />);
+const currentSlug = getPathSlug();
+createRoot(root).render(currentSlug === "five-seconds" ? <FiveSecondsRoute /> : <HomeApp />);
