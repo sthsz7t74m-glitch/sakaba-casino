@@ -2,10 +2,13 @@ import { useEffect } from "react";
 import { createRoot } from "react-dom/client";
 import Home from "./app/page";
 import DosukoiExamplesEnhancer from "./app/DosukoiExamplesEnhancer";
+import FiveSecondsGame from "./app/FiveSecondsGame";
+import HomeVersionBadge from "./app/HomeVersionBadge";
 import PartyGameEnhancer from "./app/PartyGameEnhancer";
 import "./app/globals.css";
 import "./app/dosukoi-enhancements.css";
 import "./app/party-game-enhancements.css";
+import "./app/five-seconds-v2.css";
 
 const root = document.getElementById("root");
 if (!root) throw new Error("App root was not found");
@@ -132,8 +135,10 @@ function App() {
   return (
     <>
       <Home />
+      <HomeVersionBadge />
       <DosukoiExamplesEnhancer />
       <PartyGameEnhancer />
+      <FiveSecondsGame />
     </>
   );
 }
