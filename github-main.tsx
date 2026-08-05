@@ -58,74 +58,63 @@ function getGameCards(): HTMLButtonElement[] {
   return Array.from(document.querySelectorAll<HTMLButtonElement>("button.game-card"));
 }
 
-function openScreen(slug: ScreenSlug): boolean {
-  const card = getGameCards()[SCREEN_SLUGS.indexOf(slug)];
-  if (!card) return false;
-  card.click();
-  return true;
-}
-
-function openScreenWhenReady(slug: ScreenSlug, signal: AbortSignal) {
-  const startedAt = performance.now();
-  const attempt = () => {
-    if (signal.aborted || openScreen(slug)) return;
-    if (performance.now() - startedAt < 5000) window.requestAnimationFrame(attempt);
-  };
-  attempt();
-}
-
 function App() {
   useEffect(() => {
     const controller = new AbortController();
-    let restoring = false;
-
-    const restore = (slug: ScreenSlug | null) => {
-      if (!slug) return;
-      restoring = true;
-      openScreenWhenReady(slug, controller.signal);
-      window.setTimeout(() => { restoring = false; }, 300);
-    };
+    let internalOpen = false;
 
     const oldHash = window.location.hash.replace(/^#/, "");
     if (isScreenSlug(oldHash)) {
-      history.replaceState(null, "", gamePath(oldHash));
+      window.location.replace(gamePath(oldHash));
+      return () => controller.abort();
     }
-    restore(getPathSlug());
 
-    const handleClick = (event: MouseEvent) => {
-      if (restoring) return;
+    const initialSlug = getPathSlug();
+    if (initialSlug) {
+      const startedAt = performance.now();
+      const openInitialScreen = () => {
+        if (controller.signal.aborted) return;
+        const card = getGameCards()[SCREEN_SLUGS.indexOf(initialSlug)];
+        if (card) {
+          internalOpen = true;
+          card.click();
+          internalOpen = false;
+          return;
+        }
+        if (performance.now() - startedAt < 3000) {
+          window.requestAnimationFrame(openInitialScreen);
+        }
+      };
+      window.requestAnimationFrame(openInitialScreen);
+    }
+
+    const navigate = (event: MouseEvent) => {
+      if (internalOpen) return;
       const button = (event.target as HTMLElement | null)?.closest<HTMLButtonElement>("button");
       if (!button) return;
 
       if (button.classList.contains("back")) {
-        if (window.location.pathname !== BASE_PATH) history.pushState(null, "", BASE_PATH);
+        event.preventDefault();
+        event.stopPropagation();
+        event.stopImmediatePropagation();
+        window.location.assign(BASE_PATH);
         return;
       }
 
       if (!button.classList.contains("game-card")) return;
       const slug = SCREEN_SLUGS[getGameCards().indexOf(button)];
-      if (slug && window.location.pathname !== gamePath(slug)) {
-        history.pushState(null, "", gamePath(slug));
-      }
+      if (!slug) return;
+
+      event.preventDefault();
+      event.stopPropagation();
+      event.stopImmediatePropagation();
+      window.location.assign(gamePath(slug));
     };
 
-    const handlePopState = () => {
-      const slug = getPathSlug();
-      if (slug) {
-        restore(slug);
-        return;
-      }
-      const backButton = document.querySelector<HTMLButtonElement>(".game-page .game-header .back, .five-v2-header .back");
-      backButton?.click();
-    };
-
-    document.addEventListener("click", handleClick, true);
-    window.addEventListener("popstate", handlePopState);
-
+    document.addEventListener("click", navigate, true);
     return () => {
       controller.abort();
-      document.removeEventListener("click", handleClick, true);
-      window.removeEventListener("popstate", handlePopState);
+      document.removeEventListener("click", navigate, true);
     };
   }, []);
 
