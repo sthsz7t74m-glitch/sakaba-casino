@@ -60,32 +60,36 @@ function getGameCards(): HTMLButtonElement[] {
 
 function App() {
   useEffect(() => {
-    let openingDirectRoute = false;
+    const controller = new AbortController();
+    let internalOpen = false;
 
     const oldHash = window.location.hash.replace(/^#/, "");
     if (isScreenSlug(oldHash)) {
       window.location.replace(gamePath(oldHash));
-      return;
+      return () => controller.abort();
     }
 
     const initialSlug = getPathSlug();
-    const openTimer = initialSlug
-      ? window.setTimeout(() => {
-          const card = getGameCards()[SCREEN_SLUGS.indexOf(initialSlug)];
-          if (!card) {
-            window.location.replace(BASE_PATH);
-            return;
-          }
-          openingDirectRoute = true;
+    if (initialSlug) {
+      const startedAt = performance.now();
+      const openInitialScreen = () => {
+        if (controller.signal.aborted) return;
+        const card = getGameCards()[SCREEN_SLUGS.indexOf(initialSlug)];
+        if (card) {
+          internalOpen = true;
           card.click();
-          window.setTimeout(() => {
-            openingDirectRoute = false;
-          }, 0);
-        }, 500)
-      : null;
+          internalOpen = false;
+          return;
+        }
+        if (performance.now() - startedAt < 3000) {
+          window.requestAnimationFrame(openInitialScreen);
+        }
+      };
+      window.requestAnimationFrame(openInitialScreen);
+    }
 
     const navigate = (event: MouseEvent) => {
-      if (openingDirectRoute) return;
+      if (internalOpen) return;
       const button = (event.target as HTMLElement | null)?.closest<HTMLButtonElement>("button");
       if (!button) return;
 
@@ -109,7 +113,7 @@ function App() {
 
     document.addEventListener("click", navigate, true);
     return () => {
-      if (openTimer !== null) window.clearTimeout(openTimer);
+      controller.abort();
       document.removeEventListener("click", navigate, true);
     };
   }, []);
