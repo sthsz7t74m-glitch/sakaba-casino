@@ -131,6 +131,13 @@ function Game({ onBack }: { onBack: () => void }) {
   </div>;
 }
 
+function legacyFiveSecondsIsVisible(): boolean {
+  return Array.from(document.querySelectorAll<HTMLElement>(".game-page")).some((page) => {
+    const title = page.querySelector(".game-header h1")?.textContent?.trim();
+    return title === "5秒ぴったり";
+  });
+}
+
 export default function FiveSecondsGame() {
   useEffect(() => {
     let root: Root | null = null;
@@ -151,21 +158,34 @@ export default function FiveSecondsGame() {
       document.body.append(host);
       document.documentElement.classList.add("five-v2-open");
       root = createRoot(host);
-      root.render(<Game onBack={close} />);
+      root.render(<Game onBack={() => {
+        const legacyBack = document.querySelector<HTMLButtonElement>(".game-page .game-header .back");
+        close();
+        legacyBack?.click();
+      }} />);
+    };
+
+    const sync = () => {
+      if (legacyFiveSecondsIsVisible()) open();
+      else if (root) close();
     };
 
     const onClick = (event: MouseEvent) => {
       const target = event.target as HTMLElement | null;
       const card = target?.closest<HTMLButtonElement>(".game-card");
       if (!card || !card.textContent?.includes("5秒ぴったり")) return;
-      event.preventDefault();
-      event.stopPropagation();
-      event.stopImmediatePropagation();
-      open();
+      window.setTimeout(sync, 0);
     };
 
+    const observer = new MutationObserver(sync);
+    observer.observe(document.body, { childList: true, subtree: true });
+    const interval = window.setInterval(sync, 120);
     document.addEventListener("click", onClick, true);
+    sync();
+
     return () => {
+      observer.disconnect();
+      window.clearInterval(interval);
       document.removeEventListener("click", onClick, true);
       close();
     };
