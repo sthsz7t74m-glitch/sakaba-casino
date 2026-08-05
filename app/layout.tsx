@@ -3,6 +3,7 @@ import "./globals.css";
 import "./dosukoi-enhancements.css";
 import "./party-game-enhancements.css";
 import "./five-seconds-v2.css";
+import "./five-seconds-compact.css";
 import DosukoiExamplesEnhancer from "./DosukoiExamplesEnhancer";
 import FiveSecondsGame from "./FiveSecondsGame";
 import FiveSecondsVersionBadge from "./FiveSecondsVersionBadge";
