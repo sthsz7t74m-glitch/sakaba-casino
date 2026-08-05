@@ -61,6 +61,14 @@ function Game({ onBack }: { onBack: () => void }) {
     setPhase("result");
   };
 
+  const abortGame = () => {
+    setRoundIndex(0);
+    setPlayerIndex(0);
+    setAttempts([]);
+    setLatest(null);
+    setPhase("setup");
+  };
+
   const continueGame = () => {
     if (playerIndex + 1 < playerCount) {
       setPlayerIndex((current) => current + 1);
@@ -105,27 +113,36 @@ function Game({ onBack }: { onBack: () => void }) {
         <div className="five-v2-target"><small>目標</small><strong>{target}</strong><span>秒</span></div>
         <p>準備ができたらスタート。時間は表示されません。</p>
         <button className="primary five-v2-main" type="button" onClick={() => { startedAt.current = performance.now(); setPhase("running"); }}>スタート</button>
+        <button className="secondary five-v2-abort" type="button" onClick={abortGame}>ゲームを中止</button>
       </div>}
 
-      {phase === "running" && <button className="five-v2-stop" type="button" onClick={stopAttempt} aria-label="計測を止める"><span>ROUND {roundIndex + 1}</span><small>{activeNames[playerIndex]}さん</small><strong>STOP</strong><p>{target}秒だと思ったらタップ！</p></button>}
+      {phase === "running" && <div className="five-v2-running">
+        <div className="five-v2-running-meta"><span>ROUND {roundIndex + 1} / {roundCount}</span><span>{playerIndex + 1} / {playerCount}</span></div>
+        <button className="five-v2-stop" type="button" onClick={stopAttempt} aria-label="計測を止める">
+          <small>{activeNames[playerIndex]}さん</small><strong>STOP</strong><p>{target}秒だと思ったらタップ！</p>
+        </button>
+        <button className="secondary five-v2-abort" type="button" onClick={abortGame}>ゲームを中止</button>
+      </div>}
 
       {phase === "result" && latest && <div className="five-v2-card five-v2-result">
         <p className="five-v2-label">{activeNames[playerIndex]}さんの記録</p><div className="five-v2-rank">{rankFor(latest.error)}</div>
         <strong className="five-v2-time">{latest.elapsed.toFixed(2)}<small>秒</small></strong>
         <div className="five-v2-error"><span>目標 {latest.target.toFixed(0)}秒</span><b>誤差 {latest.error.toFixed(2)}秒</b></div>
         <button className="primary five-v2-main" type="button" onClick={continueGame}>{playerIndex + 1 < playerCount ? `次は ${activeNames[playerIndex + 1]}さん` : "ラウンド結果を見る"}</button>
+        <button className="secondary five-v2-abort" type="button" onClick={abortGame}>ゲームを中止</button>
       </div>}
 
       {phase === "round" && <div className="five-v2-card"><p className="five-v2-label">ROUND {roundIndex + 1} 終了</p><h2>現在順位</h2>
         <div className="five-v2-ranking">{standings.map((player, index) => <div key={player.index} className={index === 0 ? "is-leader" : ""}><b>{index + 1}</b><span>{player.name}<small>{player.records.length}回終了</small></span><strong>{player.totalError.toFixed(2)}秒</strong></div>)}</div>
         <button className="primary five-v2-main" type="button" onClick={nextRound}>{roundIndex + 1 >= roundCount ? "最終結果へ" : `ROUND ${roundIndex + 2}へ`}</button>
+        <button className="secondary five-v2-abort" type="button" onClick={abortGame}>ゲームを中止</button>
       </div>}
 
       {phase === "final" && <div className="five-v2-card five-v2-final"><p className="five-v2-label">FINAL RESULT</p><div className="five-v2-trophy">🏆</div><h2>{standings[0]?.name}</h2><p>優勝！ 合計誤差 <b>{standings[0]?.totalError.toFixed(2)}秒</b></p>
         <div className="five-v2-podium">{standings.slice(0, 3).map((player, index) => <div key={player.index}><b>{["🥇", "🥈", "🥉"][index]}</b><span>{player.name}</span><small>{player.totalError.toFixed(2)}秒</small></div>)}</div>
         <div className="five-v2-history">{standings.map((player) => <details key={player.index}><summary><span>{player.name}</span><b>{player.totalError.toFixed(2)}秒</b></summary>{player.records.map((record) => <p key={record.round}>R{record.round + 1}：{record.elapsed.toFixed(2)}秒 <small>（誤差 {record.error.toFixed(2)}）</small></p>)}</details>)}</div>
         <button className="primary five-v2-main" type="button" onClick={startGame}>同じ設定でもう一度</button>
-        <button className="secondary" type="button" onClick={() => { setPhase("setup"); setAttempts([]); setLatest(null); }}>設定を変更</button>
+        <button className="secondary" type="button" onClick={abortGame}>設定を変更</button>
       </div>}
     </section>
   </div>;
