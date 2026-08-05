@@ -10,6 +10,7 @@ import "./app/globals.css";
 import "./app/dosukoi-enhancements.css";
 import "./app/party-game-enhancements.css";
 import "./app/five-seconds-v2.css";
+import "./app/five-seconds-compact.css";
 
 const root = document.getElementById("root");
 if (!root) throw new Error("App root was not found");
